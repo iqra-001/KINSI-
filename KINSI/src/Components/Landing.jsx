@@ -7,7 +7,7 @@ function Landing() {
   return (
    <>
  
-
+<div className="min-h-screen flex flex-col justify-between">
       {/* Navbar */}
       <header className="fixed top-0 w-full bg-white/90 shadow-md z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -59,7 +59,7 @@ function Landing() {
       <footer className="bg-white/90 text-center py-6 text-teal-800 font-medium mt-20">
         <p>&copy; 2025 KINSI. All rights reserved.</p>
       </footer>
-
+</div>
 
    </>
   )
