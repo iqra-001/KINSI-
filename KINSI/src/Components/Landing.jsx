@@ -54,6 +54,7 @@ const KinsiLandingPage = () => {
   ];
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100" style={{
       background: 'linear-gradient(135deg, #F5F1E8 0%, #E8E0D4 100%)'
     }}>
@@ -205,6 +206,17 @@ const KinsiLandingPage = () => {
             <div className="absolute -top-4 -right-4 text-4xl animate-bounce" style={{ animationDelay: '0s' }}>💕</div>
             <div className="absolute top-1/2 -left-6 text-4xl animate-bounce" style={{ animationDelay: '1s' }}>✨</div>
             <div className="absolute -bottom-4 right-8 text-4xl animate-bounce" style={{ animationDelay: '2s' }}>🌿</div>
+=======
+   <>
+ 
+<div className="min-h-screen flex flex-col justify-between">
+      {/* Navbar */}
+      <header className="fixed top-0 w-full bg-white/90 shadow-md z-40">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <img src={logo} alt="KINSI Logo" className="w-10 h-10" />
+            <span className="font-bold text-xl text-red-800">KINSI</span>
+>>>>>>> 5fc85a7329906ab75dbcb3f37927d12433d3338a
           </div>
         </div>
       </section>
@@ -375,6 +387,7 @@ const KinsiLandingPage = () => {
           </div>
         </div>
       </footer>
+<<<<<<< HEAD
 
       {/* Custom Styles for Animations */}
       <style jsx>{`
@@ -411,5 +424,8 @@ const KinsiLandingPage = () => {
     </div>
   );
 };
+=======
+</div>
+>>>>>>> 5fc85a7329906ab75dbcb3f37927d12433d3338a
 
 export default KinsiLandingPage;
