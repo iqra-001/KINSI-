@@ -1,9 +1,11 @@
 
 import logo from '../assets/logo2.png';
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Sparkles, Users, Calendar, Heart, MessageCircle, Menu, X } from 'lucide-react';
 
 const KinsiLandingPage = () => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -54,10 +56,10 @@ const KinsiLandingPage = () => {
   ];
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100" style={{
+  <>
+    {/* <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100" style={{
       background: 'linear-gradient(135deg, #F5F1E8 0%, #E8E0D4 100%)'
-    }}>
+    }}></div> */}
       {/* Navigation */}
       {/* Navigation */}
 <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
@@ -99,7 +101,7 @@ const KinsiLandingPage = () => {
         <a 
           href="#signup" 
           className="bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600 hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
-          style={{ backgroundColor: '#FF8A47' }}
+          style={{ backgroundColor: '#FF8A47' }} onClick={() => navigate("/signup")}
         >
           Sign Up
         </a>
@@ -116,6 +118,7 @@ const KinsiLandingPage = () => {
     </div>
   </div>
 </nav>
+
 
       {/* Hero Section */}
       <section className="min-h-screen flex items-center pt-20 relative overflow-hidden">
@@ -206,8 +209,9 @@ const KinsiLandingPage = () => {
             <div className="absolute -top-4 -right-4 text-4xl animate-bounce" style={{ animationDelay: '0s' }}>💕</div>
             <div className="absolute top-1/2 -left-6 text-4xl animate-bounce" style={{ animationDelay: '1s' }}>✨</div>
             <div className="absolute -bottom-4 right-8 text-4xl animate-bounce" style={{ animationDelay: '2s' }}>🌿</div>
-=======
-   <>
+      </div>
+      </div>
+      </section>
  
 <div className="min-h-screen flex flex-col justify-between">
       {/* Navbar */}
@@ -216,10 +220,9 @@ const KinsiLandingPage = () => {
           <div className="flex items-center space-x-3">
             <img src={logo} alt="KINSI Logo" className="w-10 h-10" />
             <span className="font-bold text-xl text-red-800">KINSI</span>
->>>>>>> 5fc85a7329906ab75dbcb3f37927d12433d3338a
           </div>
         </div>
-      </section>
+      </header>
 
       {/* Features Section */}
       <section className="py-24 bg-white relative">
@@ -387,7 +390,6 @@ const KinsiLandingPage = () => {
           </div>
         </div>
       </footer>
-<<<<<<< HEAD
 
       {/* Custom Styles for Animations */}
       <style jsx>{`
@@ -422,10 +424,9 @@ const KinsiLandingPage = () => {
         .animate-slide-up { animation: slide-up 0.3s ease-out; }
       `}</style>
     </div>
+</>
   );
 };
-=======
-</div>
->>>>>>> 5fc85a7329906ab75dbcb3f37927d12433d3338a
+
 
 export default KinsiLandingPage;
