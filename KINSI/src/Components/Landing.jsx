@@ -3,6 +3,10 @@ import logo from '../assets/logo2.png';
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Sparkles, Users, Calendar, Heart, MessageCircle, Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import VendorHub from './LocalVendors';
+
+
 
 const KinsiLandingPage = () => {
   const navigate = useNavigate();
@@ -71,7 +75,7 @@ const KinsiLandingPage = () => {
     <div className="flex items-center justify-between">
       <a href="#" className="flex items-center hover:opacity-80 transition-opacity">
         <img 
-          src="/src/assets/logo2.png" 
+          src={logo}
           alt="KINSI - Event Planning" 
           className="h-20 w-auto"
         />
@@ -80,12 +84,15 @@ const KinsiLandingPage = () => {
       <div className={`md:flex items-center space-x-8 ${
         isMobileMenuOpen ? 'flex absolute top-16 left-0 right-0 bg-amber-50/95 backdrop-blur-lg p-6 flex-col space-y-4 shadow-lg rounded-b-2xl' : 'hidden'
       }`}>
-        <a href="#vendors" className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-          isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-        }`}>
-          Local Vendors
-          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-        </a>
+        <Link 
+  to="/localvendors" 
+  className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+    isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+  }`}
+>
+  Local Vendors
+  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
+</Link>
         <a href="#about" className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
           isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
         }`}>
@@ -214,15 +221,6 @@ const KinsiLandingPage = () => {
       </section>
  
 <div className="min-h-screen flex flex-col justify-between">
-      {/* Navbar */}
-      <header className="fixed top-0 w-full bg-white/90 shadow-md z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img src={logo} alt="KINSI Logo" className="w-10 h-10" />
-            <span className="font-bold text-xl text-red-800">KINSI</span>
-          </div>
-        </div>
-      </header>
 
       {/* Features Section */}
       <section className="py-24 bg-white relative">
@@ -391,38 +389,6 @@ const KinsiLandingPage = () => {
         </div>
       </footer>
 
-      {/* Custom Styles for Animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: rotate(-5deg) translateY(0px); }
-          50% { transform: rotate(-5deg) translateY(-10px); }
-        }
-        
-        @keyframes fade-in-left {
-          from { opacity: 0; transform: translateX(-50px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes fade-in-right {
-          from { opacity: 0; transform: translateX(50px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in-left { animation: fade-in-left 1s ease-out; }
-        .animate-fade-in-right { animation: fade-in-right 1s ease-out; }
-        .animate-fade-in-up { animation: fade-in-up 1s ease-out; }
-        .animate-slide-up { animation: slide-up 0.3s ease-out; }
-      `}</style>
     </div>
 </>
   );
