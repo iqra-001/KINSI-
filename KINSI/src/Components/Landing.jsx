@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom';
 import VendorHub from './LocalVendors';
 
 
-
 const KinsiLandingPage = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -66,7 +65,7 @@ const KinsiLandingPage = () => {
     }}></div> */}
       {/* Navigation */}
       {/* Navigation */}
-<nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
   isScrolled 
     ? 'bg-amber-50/95 backdrop-blur-lg shadow-lg border-b border-amber-900/10' 
     : 'bg-transparent'
@@ -84,34 +83,48 @@ const KinsiLandingPage = () => {
       <div className={`md:flex items-center space-x-8 ${
         isMobileMenuOpen ? 'flex absolute top-16 left-0 right-0 bg-amber-50/95 backdrop-blur-lg p-6 flex-col space-y-4 shadow-lg rounded-b-2xl' : 'hidden'
       }`}>
-        <Link 
-  to="/localvendors" 
-  className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-    isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-  }`}
->
-  Local Vendors
-  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-</Link>
-        <a href="#about" className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-          isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-        }`}>
+
+        {/* Local Vendors */}
+        <span 
+          onClick={() => navigate("/localvendors")}
+          className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+            isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+          }`}
+        >
+          Local Vendors
+          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+
+        {/* About Us */}
+        <span 
+          onClick={() => navigate("/aboutus")}
+          className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+            isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+          }`}
+        >
           About Us
           <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#contact" className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-          isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-        }`}>
+        </span>
+
+        {/* Contact */}
+        <span 
+          onClick={() => navigate("/contact")}
+          className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+            isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+          }`}
+        >
           Contact
           <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a 
-          href="#signup" 
+        </span>
+
+        {/* Sign Up */}
+        <button 
           className="bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600 hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
-          style={{ backgroundColor: '#FF8A47' }} onClick={() => navigate("/signup")}
+          style={{ backgroundColor: '#FF8A47' }} 
+          onClick={() => navigate("/signup")}
         >
           Sign Up
-        </a>
+        </button>
       </div>
 
       <button 
