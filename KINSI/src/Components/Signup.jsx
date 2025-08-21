@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, User, Mail, Lock, ArrowLeft, Sparkles, ChevronRight } from "lucide-react";
+import KinsiLandingPage from "./Landing";
+import KinsiDashboard from "./UserDashBoard";
+import '../index.css'
 
 function ModernSignup() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false); // Add this state
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,22 +21,59 @@ function ModernSignup() {
     });
   };
 
-  // Handle form submit
+  // Modified handleSubmit function
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.password) {
+      alert("Please fill in all fields");
+      return;
+    }
+
     console.log("Form submitted:", formData);
-    alert("Signup successful!");
+    
+    // Here you would typically:
+    // 1. Send data to your backend API
+    // 2. Handle authentication tokens
+    // 3. Store user session
+    // 4. Handle any errors
+    
+    // For now, we'll simulate successful signup
+    alert("Signup successful! Welcome to KINSI!");
+    
+    // Redirect to dashboard
+    setShowDashboard(true);
+  };
+
+  const handleLogout = () => {
+    setShowDashboard(false);
+    // Clear form data on logout
+    setFormData({
+      name: "",
+      email: "",
+      password: ""
+    });
   };
 
   const navigateHome = () => {
-    // Replace with your navigation logic
-    console.log("Navigate to home");
+    // Navigate back to landing page
+    setShowDashboard(false);
+    // If you're using React Router, you would use:
+    // navigate('/');
   };
 
   const navigateLogin = () => {
-    // Replace with your navigation logic
+    // Replace with your login navigation logic
     console.log("Navigate to login");
+    // If you're using React Router, you would use:
+    // navigate('/login');
   };
+
+  // Render dashboard if user is signed up
+  if (showDashboard) {
+    return <KinsiDashboard onLogout={handleLogout} userData={formData} />;
+  }
 
   return (
     <div 
@@ -216,7 +257,7 @@ function ModernSignup() {
           </div>
 
           {/* Form */}
-          <div className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Name Field */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none z-10">
@@ -263,6 +304,7 @@ function ModernSignup() {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                minLength="6"
                 className="w-full pl-8 pr-8 py-4 bg-transparent border-0 border-b-2 border-green-200 focus:border-orange-400 focus:outline-none transition-colors duration-300 text-lg placeholder-gray-400"
                 style={{ color: '#3D2914' }}
               />
@@ -278,7 +320,7 @@ function ModernSignup() {
 
             {/* Submit Button */}
             <button
-              onClick={handleSubmit}
+              type="submit"
               className="group w-full flex items-center justify-center gap-3 text-white py-4 rounded-2xl text-lg font-bold transition-all duration-300 hover:transform hover:-translate-y-1 shadow-lg hover:shadow-2xl relative overflow-hidden mt-12"
               style={{ 
                 background: 'linear-gradient(135deg, #FF8A47 0%, #FF6B2B 100%)',
@@ -289,7 +331,7 @@ function ModernSignup() {
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             </button>
-          </div>
+          </form>
 
           {/* Login Link */}
           <div className="text-center mt-8">
@@ -332,18 +374,7 @@ function ModernSignup() {
       <div className="absolute top-1/4 left-1/3 text-2xl opacity-20 animate-pulse pointer-events-none" style={{ animationDelay: '1.5s' }}>🎨</div>
       <div className="absolute bottom-1/3 right-1/3 text-2xl opacity-25 animate-pulse pointer-events-none" style={{ animationDelay: '2.5s' }}>💐</div>
       <div className="absolute top-2/3 left-1/5 text-2xl opacity-15 animate-pulse pointer-events-none" style={{ animationDelay: '0.5s' }}>🕯️</div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-10px) rotate(1deg); }
-          66% { transform: translateY(-5px) rotate(-1deg); }
-        }
-        
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-      `}</style>
+     
     </div>
   );
 }

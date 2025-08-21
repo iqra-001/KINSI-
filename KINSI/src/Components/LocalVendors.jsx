@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, MapPin, Phone, Mail, Star, Filter, Search, Heart, MessageCircle, X, Award, Clock, Verified } from 'lucide-react';
+import logo from '../assets/logo2.png';
+
+
 
 const LocalVendorsPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -282,19 +285,17 @@ const LocalVendorsPage = () => {
       }`}>
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <a href="#" className="flex items-center hover:opacity-80 transition-opacity">
-              <div className="text-3xl font-black" style={{ color: '#FF8A47' }}>KINSI</div>
+                      <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <img 
+                src={logo} // import logo from '../assets/logo2.png'
+                alt="KINSI - Event Planning"
+                className="h-20 w-auto object-contain"
+              />
             </a>
             
             <div className={`md:flex items-center space-x-8 ${
               isMobileMenuOpen ? 'flex absolute top-16 left-0 right-0 bg-amber-50/95 backdrop-blur-lg p-6 flex-col space-y-4 shadow-lg rounded-b-2xl' : 'hidden'
             }`}>
-              <span className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-                isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-              }`}>
-                Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-              </span>
 
               <span className={`cursor-pointer font-medium text-orange-500 relative ${
                 isScrolled ? '' : 'drop-shadow-sm'
@@ -533,6 +534,48 @@ const LocalVendorsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Footer - Same as landing page */}
+      <footer className="py-16 text-amber-50" style={{ backgroundColor: '#3D2914' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h3 className="text-2xl font-bold mb-4" style={{ color: '#FF8A47' }}>KINSI</h3>
+              <p className="opacity-90">Bringing Pinterest visions to life, one event at a time.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4" style={{ color: '#A8D5A8' }}>Services</h4>
+              <ul className="space-y-2 opacity-90">
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Wedding Planning</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Corporate Events</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Birthday Parties</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Baby Showers</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4" style={{ color: '#A8D5A8' }}>Company</h4>
+              <ul className="space-y-2 opacity-90">
+                <li><a href="/about" className="hover:text-orange-400 transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Our Team</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Careers</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4" style={{ color: '#A8D5A8' }}>Connect</h4>
+              <ul className="space-y-2 opacity-90">
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Instagram</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Pinterest</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Facebook</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Twitter</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="text-center pt-8 border-t border-amber-800/30 opacity-70">
+            <p>&copy; 2025 KINSI. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -60,10 +60,6 @@ const KinsiLandingPage = () => {
 
   return (
   <>
-    {/* <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100" style={{
-      background: 'linear-gradient(135deg, #F5F1E8 0%, #E8E0D4 100%)'
-    }}></div> */}
-      {/* Navigation */}
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
   isScrolled 
@@ -397,7 +393,7 @@ const KinsiLandingPage = () => {
             </div>
           </div>
           <div className="text-center pt-8 border-t border-amber-800/30 opacity-70">
-            <p>&copy; 2024 KINSI. All rights reserved.</p>
+            <p>&copy; 2025 KINSI. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -5,6 +5,7 @@ import KinsiLandingPage from './Components/Landing';
 import LocalVendorsPage from './Components/LocalVendors';
 import AboutUsPage from './Components/AboutUs';
 import ModernSignup from './Components/Signup';
+import KinsiDashboard from './Components/UserDashBoard';
 
 function App() {
   return (
@@ -14,6 +15,8 @@ function App() {
         <Route path = "/localvendors" element = {<LocalVendorsPage/>}/>
         <Route path="/signup" element={<ModernSignup />} />
         <Route path = "/aboutus" element = { <AboutUsPage/>}/>
+        <Route path = "userdashboard" element = {<KinsiDashboard/>}/>
+       
       </Routes>
     </Router>  
   )

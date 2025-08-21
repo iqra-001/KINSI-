@@ -134,7 +134,7 @@ const AboutUsPage = () => {
           <div className="flex items-center justify-between">
           <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
   <img 
-    src={logo} // import logo from '../assets/logo.png'
+    src={logo} // import logo from '../assets/logo2.png'
     alt="KINSI - Event Planning"
     className="h-20 w-auto object-contain"
   />
@@ -511,7 +511,7 @@ const AboutUsPage = () => {
             </div>
           </div>
           <div className="text-center pt-8 border-t border-amber-800/30 opacity-70">
-            <p>&copy; 2024 KINSI. All rights reserved.</p>
+            <p>&copy; 2025 KINSI. All rights reserved.</p>
           </div>
         </div>
       </footer>
