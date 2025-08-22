@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, Sparkles, Users, Calendar, Heart, MessageCircle, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VendorHub from './LocalVendors';
+import VisionsPage from './VisionsPage';
 
 
 const KinsiLandingPage = () => {
@@ -102,14 +103,14 @@ const KinsiLandingPage = () => {
           <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
         </span>
 
-        {/* Contact */}
+        {/* Visions */}
         <span 
-          onClick={() => navigate("/contact")}
+          onClick={() => navigate("/visionspage")}
           className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
             isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
           }`}
         >
-          Contact
+          Visions
           <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
         </span>
 
@@ -379,7 +380,7 @@ const KinsiLandingPage = () => {
                 <li><a href="#" className="hover:text-orange-400 transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-orange-400 transition-colors">Our Team</a></li>
                 <li><a href="#" className="hover:text-orange-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Visions</a></li>
               </ul>
             </div>
             <div>

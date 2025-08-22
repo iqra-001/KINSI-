@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, MapPin, Phone, Mail, Star, Filter, Search, Heart, MessageCircle, X, Award, Clock, Verified } from 'lucide-react';
 import logo from '../assets/logo2.png';
+import { Link } from "react-router-dom";
 
 
 
@@ -235,7 +236,7 @@ const LocalVendorsPage = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <h4 className="font-semibold mb-2" style={{ color: '#3D2914' }}>Contact Information</h4>
+                <h4 className="font-semibold mb-2" style={{ color: '#3D2914' }}>Visions Information</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-gray-500" />
@@ -263,7 +264,7 @@ const LocalVendorsPage = () => {
                 className="flex-1 bg-orange-500 text-white py-3 rounded-full font-semibold hover:bg-orange-600 transition-colors"
                 style={{ backgroundColor: '#FF8A47' }}
               >
-                Contact Vendor
+                Visions Vendor
               </button>
               <button className="flex-1 border border-green-300 text-green-700 py-3 rounded-full font-semibold hover:bg-green-50 transition-colors">
                 Save to Favorites
@@ -283,60 +284,66 @@ const LocalVendorsPage = () => {
           ? 'bg-amber-50/95 backdrop-blur-lg shadow-lg border-b border-amber-900/10' 
           : 'bg-transparent'
       }`}>
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-                      <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <img 
-                src={logo} // import logo from '../assets/logo2.png'
-                alt="KINSI - Event Planning"
-                className="h-20 w-auto object-contain"
-              />
-            </a>
-            
-            <div className={`md:flex items-center space-x-8 ${
-              isMobileMenuOpen ? 'flex absolute top-16 left-0 right-0 bg-amber-50/95 backdrop-blur-lg p-6 flex-col space-y-4 shadow-lg rounded-b-2xl' : 'hidden'
-            }`}>
+  <div className="max-w-6xl mx-auto px-6 py-4">
+    <div className="flex items-center justify-between">
+      <a href="/" className="flex items-center hover:opacity-80 transition-opacity">
+        <img 
+          src={logo} // import logo from '../assets/logo2.png'
+          alt="KINSI - Event Planning"
+          className="h-20 w-auto object-contain"
+        />
+      </a>
+      
+      <div className={`md:flex items-center space-x-8 ${
+        isMobileMenuOpen ? 'flex absolute top-16 left-0 right-0 bg-amber-50/95 backdrop-blur-lg p-6 flex-col space-y-4 shadow-lg rounded-b-2xl' : 'hidden'
+      }`}>
 
-              <span className={`cursor-pointer font-medium text-orange-500 relative ${
-                isScrolled ? '' : 'drop-shadow-sm'
-              }`}>
-                Local Vendors
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-500"></span>
-              </span>
+        <a href="/localvendors" 
+          className={`cursor-pointer font-medium text-orange-500 relative ${
+            isScrolled ? '' : 'drop-shadow-sm'
+          }`}>
+          Local Vendors
+          <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-500"></span>
+        </a>
 
-              <span className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-                isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-              }`}>
-                About Us
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-              </span>
+        <a href="/aboutus" 
+          className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+            isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+          }`}>
+          About Us
+          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
+        </a>
 
-              <span className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
-                isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-              }`}>
-                Contact
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
-              </span>
+        <a href="/visionspage" 
+          className={`cursor-pointer font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+            isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+          }`}>
+          Visions
+          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
+        </a>
 
-              <button 
-                className="bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600 hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ backgroundColor: '#FF8A47' }}
-              >
-                Sign Up
-              </button>
-            </div>
+        <a href="/signup">
+          <button 
+            className="bg-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-orange-600 hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: '#FF8A47' }}
+          >
+            Sign Up
+          </button>
+        </a>
+      </div>
 
-            <button 
-              className={`md:hidden p-2 transition-colors ${
-                isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
-              }`}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? "✕" : "☰"}
-            </button>
-          </div>
-        </div>
-      </nav>
+      <button 
+        className={`md:hidden p-2 transition-colors ${
+          isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
+        }`}
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? "✕" : "☰"}
+      </button>
+    </div>
+  </div>
+</nav>
+
 
       {/* Hero Section */}
       <section className="pt-32 pb-16 relative overflow-hidden">
@@ -405,12 +412,7 @@ const LocalVendorsPage = () => {
                 className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:transform hover:-translate-y-2 border border-green-200 group cursor-pointer"
                 onClick={() => setSelectedVendor(vendor)}
               >
-                {vendor.featured && (
-                  <div className="bg-gradient-to-r from-orange-500 to-green-400 text-white text-xs font-semibold px-3 py-1 absolute top-4 left-4 rounded-full z-10">
-                    <Award className="w-3 h-3 inline mr-1" />
-                    Featured
-                  </div>
-                )}
+                
 
                 <div className="p-6 text-center relative">
                   <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">
@@ -558,7 +560,7 @@ const LocalVendorsPage = () => {
                 <li><a href="/about" className="hover:text-orange-400 transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-orange-400 transition-colors">Our Team</a></li>
                 <li><a href="#" className="hover:text-orange-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Visions</a></li>
               </ul>
             </div>
             <div>

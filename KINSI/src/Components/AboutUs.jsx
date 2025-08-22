@@ -159,10 +159,10 @@ const AboutUsPage = () => {
                 About Us
                 <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-500"></span>
               </span>
-              <a href="#contact" className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
+              <a href="/visionspage" className={`font-medium hover:text-orange-500 transition-all duration-300 relative group ${
                 isScrolled ? 'text-amber-900' : 'text-amber-900 drop-shadow-sm'
               }`}>
-                Contact
+                Visions
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
               <button 
@@ -497,7 +497,7 @@ const AboutUsPage = () => {
                 <li><a href="/about" className="hover:text-orange-400 transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-orange-400 transition-colors">Our Team</a></li>
                 <li><a href="#" className="hover:text-orange-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">Visions</a></li>
               </ul>
             </div>
             <div>
