@@ -16,7 +16,7 @@ function App() {
         <Route path = "/localvendors" element = {<LocalVendorsPage/>}/>
         <Route path="/signup" element={<ModernSignup />} />
         <Route path = "/aboutus" element = { <AboutUsPage/>}/>
-        <Route path = "userdashboard" element = {<KinsiDashboard/>}/>
+        <Route path = "/userdashboard" element = {<KinsiDashboard/>}/>
         <Route path = "/visionspage" element = {<VisionsPage/>}/>
        
       </Routes>

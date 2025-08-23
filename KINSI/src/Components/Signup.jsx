@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff, User, Mail, Lock, ArrowLeft, Sparkles, ChevronRight } from "lucide-react";
 import KinsiLandingPage from "./Landing";
 import KinsiDashboard from "./UserDashBoard";
+import GoogleBtn from "./GoogleBtn";
 import '../index.css'
 
 function ModernSignup() {
@@ -332,7 +333,7 @@ function ModernSignup() {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             </button>
           </form>
-
+          <div className="p-3 w-60 justify-self-center "><GoogleBtn /></div>
           {/* Login Link */}
           <div className="text-center mt-8">
             <p className="text-lg" style={{ color: '#8B6F47' }}>
