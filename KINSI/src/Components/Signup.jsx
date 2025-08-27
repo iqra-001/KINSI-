@@ -1,17 +1,20 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, User, Mail, Lock, ArrowLeft, Sparkles, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock, ArrowLeft, Sparkles, ChevronRight, Briefcase } from "lucide-react";
 import KinsiLandingPage from "./Landing";
 import KinsiDashboard from "./UserDashBoard";
+import VendorDashboard from "./VendorDashBoard"; // You'll need to create this
 import GoogleBtn from "./GoogleBtn";
 import '../index.css'
 
 function ModernSignup() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false); // Add this state
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [userRole, setUserRole] = useState("user"); // Default role
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
+    role: "user" // Default role
   });
 
   // Handle input changes
@@ -19,6 +22,15 @@ function ModernSignup() {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  // Handle role selection
+  const handleRoleChange = (role) => {
+    setUserRole(role);
+    setFormData({
+      ...formData,
+      role: role
     });
   };
 
@@ -41,9 +53,9 @@ function ModernSignup() {
     // 4. Handle any errors
     
     // For now, we'll simulate successful signup
-    alert("Signup successful! Welcome to KINSI!");
+    alert(`Signup successful! Welcome to KINSI as a ${formData.role}!`);
     
-    // Redirect to dashboard
+    // Redirect to dashboard based on role
     setShowDashboard(true);
   };
 
@@ -53,27 +65,27 @@ function ModernSignup() {
     setFormData({
       name: "",
       email: "",
-      password: ""
+      password: "",
+      role: "user"
     });
+    setUserRole("user");
   };
 
   const navigateHome = () => {
-    // Navigate back to landing page
     setShowDashboard(false);
-    // If you're using React Router, you would use:
-    // navigate('/');
   };
 
   const navigateLogin = () => {
-    // Replace with your login navigation logic
     console.log("Navigate to login");
-    // If you're using React Router, you would use:
-    // navigate('/login');
   };
 
-  // Render dashboard if user is signed up
+  // Render appropriate dashboard based on role
   if (showDashboard) {
-    return <KinsiDashboard onLogout={handleLogout} userData={formData} />;
+    if (formData.role === "vendor") {
+      return <VendorDashboard onLogout={handleLogout} userData={formData} />;
+    } else {
+      return <KinsiDashboard onLogout={handleLogout} userData={formData} />;
+    }
   }
 
   return (
@@ -255,6 +267,39 @@ function ModernSignup() {
             <p className="text-xl" style={{ color: '#8B6F47' }}>
               Start planning your dream events today
             </p>
+          </div>
+
+          {/* Role Selection */}
+          <div className="mb-8">
+            <label className="block text-lg mb-4" style={{ color: '#3D2914' }}>
+              I am signing up as a:
+            </label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => handleRoleChange("user")}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-300 ${
+                  userRole === "user" 
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-md" 
+                    : "border-green-200 bg-transparent text-gray-600 hover:border-orange-300"
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span>Event Planner</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleChange("vendor")}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-300 ${
+                  userRole === "vendor" 
+                    ? "border-orange-400 bg-orange-50 text-orange-700 shadow-md" 
+                    : "border-green-200 bg-transparent text-gray-600 hover:border-orange-300"
+                }`}
+              >
+                <Briefcase className="w-5 h-5" />
+                <span>Vendor</span>
+              </button>
+            </div>
           </div>
 
           {/* Form */}
