@@ -64,7 +64,7 @@ const VendorDashboard = () => {
   });
 
   // API Base URL - adjust this to match your Flask server
-  const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'http://localhost:5000/api';
 
   // API utility functions
   const apiCall = async (endpoint, options = {}) => {
