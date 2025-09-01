@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock, ArrowLeft, Sparkles, ChevronRight, Briefcase } from "lucide-react";
 import KinsiLandingPage from "./Landing";
 import KinsiDashboard from "./UserDashBoard";
 import VendorDashboard from "./VendorDashBoard"; // You'll need to create this
 import GoogleBtn from "./GoogleBtn";
 import '../index.css'
+import { GoogleLogin } from "@react-oauth/google";
 
 function ModernSignup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -57,6 +59,34 @@ function ModernSignup() {
     
     // Redirect to dashboard based on role
     setShowDashboard(true);
+  };
+
+  // Handle Google OAuth success
+  const handleGoogleSuccess = (credentialResponse) => {
+    console.log("Google OAuth Success:", credentialResponse);
+    
+    // Here you would typically:
+    // 1. Send the credential to your backend
+    // 2. Decode the JWT token to get user info
+    // 3. Create user session
+    // 4. Redirect to dashboard
+    
+    // For now, simulate successful Google signup
+    const userData = {
+      name: "Google User", // You'd decode this from the JWT
+      email: "user@gmail.com", // You'd decode this from the JWT
+      role: userRole
+    };
+    
+    setFormData(userData);
+    alert(`Google signup successful! Welcome to KINSI as a ${userRole}!`);
+    setShowDashboard(true);
+  };
+
+  // Handle Google OAuth error
+  const handleGoogleError = () => {
+    console.log("Google login failed");
+    alert("Google signup failed. Please try again.");
   };
 
   const handleLogout = () => {
@@ -378,20 +408,46 @@ function ModernSignup() {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             </button>
           </form>
-          <div className="p-3 w-60 justify-self-center "><GoogleBtn /></div>
+
+          {/* Divider */}
+          <div className="flex items-center my-8">
+            <div className="flex-1 h-px bg-green-200"></div>
+            <span className="px-4 text-sm" style={{ color: '#8B6F47' }}>or continue with</span>
+            <div className="flex-1 h-px bg-green-200"></div>
+          </div>
+
+          {/* Google OAuth Button */}
+          <div className="flex justify-center mb-6">
+            <GoogleLogin 
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              theme="outline"
+              size="large"
+              width="384"
+              text="signup_with"
+            />
+          </div>
+
+          {/* Alternative: Your Custom Google Button */}
+          {/* Uncomment this if you prefer to use your custom GoogleBtn component */}
+          {/* <div className="flex justify-center mb-6">
+            <GoogleBtn />
+          </div> */}
+
           {/* Login Link */}
           <div className="text-center mt-8">
-            <p className="text-lg" style={{ color: '#8B6F47' }}>
-              Already have an account?{' '}
-              <button 
-                onClick={navigateLogin}
-                className="font-semibold hover:underline transition-all duration-300 underline-offset-4"
-                style={{ color: '#FF8A47' }}
-              >
-                Sign In
-              </button>
-            </p>
-          </div>
+  <p className="text-lg" style={{ color: '#8B6F47' }}>
+    Already have an account?{' '}
+    <Link
+      to="/login"
+      className="font-semibold hover:underline transition-all duration-300 underline-offset-4"
+      style={{ color: '#FF8A47' }}
+    >
+      Sign In
+    </Link>
+  </p>
+</div>
 
           {/* Social Proof */}
           <div className="mt-12 text-center">
@@ -420,7 +476,6 @@ function ModernSignup() {
       <div className="absolute top-1/4 left-1/3 text-2xl opacity-20 animate-pulse pointer-events-none" style={{ animationDelay: '1.5s' }}>🎨</div>
       <div className="absolute bottom-1/3 right-1/3 text-2xl opacity-25 animate-pulse pointer-events-none" style={{ animationDelay: '2.5s' }}>💐</div>
       <div className="absolute top-2/3 left-1/5 text-2xl opacity-15 animate-pulse pointer-events-none" style={{ animationDelay: '0.5s' }}>🕯️</div>
-     
     </div>
   );
 }
