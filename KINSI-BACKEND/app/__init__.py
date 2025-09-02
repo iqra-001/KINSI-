@@ -1,36 +1,32 @@
-# app/__init__.py - Updated to use instance folder properly
+# app/__init__.py
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import os
+from flask_migrate import Migrate
+from app.config import Config
 
 db = SQLAlchemy()
+migrate = Migrate() 
 
-def create_app():
-    app = Flask(__name__, instance_relative_config=True)
-    
-    # Configuration
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-    
-    # Database configuration - Flask will use instance/site.db automatically
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///site.db')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # Enable CORS for frontend communication
-    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
     
     # Initialize extensions
     db.init_app(app)
+    migrate.init_app(app, db)
     
-    # Ensure instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
+    # Enable CORS with proper configuration
+    CORS(app, origins=app.config['CORS_ORIGINS'])
+    
+    # Import models so Alembic can see them
+   
     
     # Register blueprints
     from app.routes.vendor_routes import vendor_bp
     from app.routes.service_routes import service_bp
+   
+
     app.register_blueprint(vendor_bp, url_prefix='/api')
     app.register_blueprint(service_bp, url_prefix='/api')
     

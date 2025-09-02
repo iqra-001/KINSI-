@@ -440,7 +440,7 @@ function ModernSignup() {
   <p className="text-lg" style={{ color: '#8B6F47' }}>
     Already have an account?{' '}
     <Link
-      to="/login"
+      to="/signin"
       className="font-semibold hover:underline transition-all duration-300 underline-offset-4"
       style={{ color: '#FF8A47' }}
     >

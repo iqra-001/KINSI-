@@ -1,9 +1,77 @@
-# app.py - Improved version with better error handling
+# app.py
 from app import create_app, db
-import os
+from app.models.vendors import Vendor
+from app.models.services import Service
 from flask import jsonify
+import json  # Add this import
 
 app = create_app()
+
+@app.route('/')
+def hello():
+    return "Welcome to the Wedding Vendor API!"
+
+@app.route('/api/test')
+def test():
+    return jsonify({
+        "message": "API is working!",
+        "status": "success",
+        "endpoints": [
+            "GET /api/vendor/profile/<user_id>",
+            "POST /api/vendor/profile",
+            "GET /api/vendor/stats/<vendor_id>",
+            "GET /api/vendors"  # Added the new endpoint to the list
+        ]
+    })
+
+# New endpoint to get all vendors with their services
+@app.route('/api/vendors', methods=['GET'])
+def get_all_vendors():
+    try:
+        vendors = Vendor.query.all()
+        vendors_data = []
+        
+        for vendor in vendors:
+            vendor_data = vendor.to_dict()  # Use your existing to_dict method
+            
+            # Get vendor services
+            services = Service.query.filter_by(vendor_id=vendor.id).all()
+            vendor_data['services'] = [{
+                'id': service.id,
+                'service_name': service.service_name,
+                'category': service.category,
+                'price': service.price,
+                'duration': service.duration,
+                'description': service.description,
+                'features': json.loads(service.features) if service.features else [],
+                'views': service.views,
+                'inquiries': service.inquiries,
+                'bookings': service.bookings,
+                'is_active': service.is_active,
+                'created_at': service.created_at.isoformat() if service.created_at else None,
+                'updated_at': service.updated_at.isoformat() if service.updated_at else None
+            } for service in services]
+            
+            vendors_data.append(vendor_data)
+        
+        return jsonify(vendors_data)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Initialize database tables - using application context instead of before_first_request
+with app.app_context():
+    try:
+        db.create_all()
+        print("✅ Database tables created successfully!")
+        
+        # Check if tables were created
+        result = db.session.execute(db.text("SELECT name FROM sqlite_master WHERE type='table';"))
+        tables = [row[0] for row in result]
+        print(f"📋 Tables in database: {tables}")
+        
+    except Exception as e:
+        print(f"❌ Error creating tables: {e}")
 
 # Add error handlers
 @app.errorhandler(404)
@@ -15,63 +83,11 @@ def internal_error(error):
     db.session.rollback()
     return jsonify({"error": "Internal server error"}), 500
 
-# Add a test endpoint
-@app.route('/api/test', methods=['GET'])
-def test_connection():
-    return jsonify({
-        "message": "Server is running!",
-        "status": "success",
-        "endpoints": [
-            "GET /api/test",
-            "GET /api/vendor/profile/<user_id>",
-            "POST /api/vendor/profile",
-            "GET /api/vendor/services/<vendor_id>",
-            "POST /api/vendor/services",
-            "GET /api/vendor/stats/<vendor_id>"
-        ]
-    }), 200
-
-# Add request logging for debugging
-@app.before_request
-def log_request_info():
-    from flask import request
-    print(f"\n=== Incoming Request ===")
-    print(f"Method: {request.method}")
-    print(f"URL: {request.url}")
-    print(f"Headers: {dict(request.headers)}")
-    if request.is_json:
-        print(f"JSON Data: {request.get_json()}")
-    print(f"========================\n")
-
-@app.after_request
-def log_response_info(response):
-    print(f"\n=== Outgoing Response ===")
-    print(f"Status: {response.status}")
-    print(f"Headers: {dict(response.headers)}")
-    print(f"=========================\n")
-    return response
-
 if __name__ == '__main__':
-    # Initialize database tables on startup
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Database tables created/verified successfully!")
-        except Exception as e:
-            print(f"❌ Database error: {e}")
-    
     print("🚀 Starting Flask server...")
-    print("📍 Server will be available at:")
-    print("   - http://localhost:5000")
-    print("   - http://127.0.0.1:5000")
-    print("🧪 Test endpoint: http://localhost:5000/api/test")
-    print("👤 Vendor API: http://localhost:5000/api/vendor/profile/1")
+    print("📍 Endpoints available at:")
+    print("   - http://localhost:5000/api/test")
+    print("   - http://localhost:5000/api/vendor/profile/1")
+    print("   - http://localhost:5000/api/vendors")  # Added the new endpoint
     
-    # Start server with detailed configuration
-    app.run(
-        debug=True, 
-        port=5000, 
-        host='0.0.0.0',  # Accept connections from any IP
-        threaded=True,   # Handle multiple requests
-        use_reloader=True  # Auto-reload on code changes
-    )
+    app.run(debug=True, host='0.0.0.0', port=5000)

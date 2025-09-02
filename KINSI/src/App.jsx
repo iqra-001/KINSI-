@@ -8,7 +8,7 @@ import ModernSignup from './Components/Signup';
 import KinsiDashboard from './Components/UserDashBoard';
 import VisionsPage from './Components/VisionsPage';
 import VendorDashboard from './Components/VendorDashBoard';
-import LogIn from './Components/LogIn';
+import ModernLogin from './Components/LogIn';
 
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
         <Route path = "/userdashboard" element = {<KinsiDashboard/>}/>
         <Route path = "/visionspage" element = {<VisionsPage/>}/>
         <Route path='/vendorpage' element = {<VendorDashboard/>}/>
-        <Route path='/signin' element = {<LogIn/>}/>
+        <Route path='/signin' element = {<ModernLogin/>}/>
 
        
       </Routes>
