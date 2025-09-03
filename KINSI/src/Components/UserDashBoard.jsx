@@ -1,0 +1,1269 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  User, Calendar, Users, CreditCard, Settings, Bell, 
+  Camera, Edit3, Heart, Sparkles, ChevronRight, Plus,
+  MapPin, Phone, Mail, Star, ArrowLeft, Upload,
+  CheckCircle, Clock, DollarSign, Package, LogOut, X,
+  Save, Trash2, Edit
+} from 'lucide-react';
+
+const KinsiDashboard = () => {
+  const [activeSection, setActiveSection] = useState('overview');
+  const [profileImage, setProfileImage] = useState(null);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  
+  // Profile data with saved state
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: ''
+  });
+
+  // Temporary editing data
+  const [editingData, setEditingData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: ''
+  });
+
+  const [eventFormData, setEventFormData] = useState({
+    eventName: '',
+    eventType: '',
+    date: '',
+    budget: '',
+    guests: '',
+    description: ''
+  });
+
+  const [paymentFormData, setPaymentFormData] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardName: '',
+    mpesaNumber: ''
+  });
+
+  // Events storage
+  const [savedEvents, setSavedEvents] = useState([]);
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+
+  // Check if profile has any data
+  const hasProfileData = () => {
+    return Object.values(profileData).some(value => value.trim() !== '');
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setProfileImage(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    if (isEditingProfile) {
+      setEditingData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    } else {
+      setProfileData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  const handleEventInputChange = (field, value) => {
+    setEventFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handlePaymentInputChange = (field, value) => {
+    setPaymentFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Profile CRUD operations
+  const saveProfile = () => {
+    if (isEditingProfile) {
+      setProfileData(editingData);
+      setIsEditingProfile(false);
+    }
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 3000);
+  };
+
+  const startEditingProfile = () => {
+    setEditingData(profileData);
+    setIsEditingProfile(true);
+  };
+
+  const cancelEditingProfile = () => {
+    setEditingData(profileData);
+    setIsEditingProfile(false);
+  };
+
+  const deleteProfileField = (field) => {
+    if (window.confirm(`Are you sure you want to delete your ${field}?`)) {
+      if (isEditingProfile) {
+        setEditingData(prev => ({
+          ...prev,
+          [field]: ''
+        }));
+      } else {
+        setProfileData(prev => ({
+          ...prev,
+          [field]: ''
+        }));
+      }
+    }
+  };
+
+  const deleteEntireProfile = () => {
+    if (window.confirm('Are you sure you want to delete your entire profile? This action cannot be undone.')) {
+      setProfileData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        location: '',
+        bio: ''
+      });
+      setProfileImage(null);
+      setIsEditingProfile(false);
+    }
+  };
+
+  const handleEventSubmit = (e) => {
+    e.preventDefault();
+    const newEvent = {
+      id: Date.now(),
+      ...eventFormData,
+      createdAt: new Date().toISOString()
+    };
+    setSavedEvents(prev => [...prev, newEvent]);
+    setShowEventForm(false);
+    setEventFormData({
+      eventName: '',
+      eventType: '',
+      date: '',
+      budget: '',
+      guests: '',
+      description: ''
+    });
+  };
+
+  const deleteEvent = (eventId) => {
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      setSavedEvents(prev => prev.filter(event => event.id !== eventId));
+    }
+  };
+
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
+    const newPaymentMethod = {
+      id: Date.now(),
+      type: paymentMethod,
+      ...(paymentMethod === 'card' ? {
+        cardNumber: paymentFormData.cardNumber.replace(/\d(?=\d{4})/g, '*'),
+        cardName: paymentFormData.cardName,
+        expiryDate: paymentFormData.expiryDate
+      } : {
+        mpesaNumber: paymentFormData.mpesaNumber
+      }),
+      createdAt: new Date().toISOString()
+    };
+    setSavedPaymentMethods(prev => [...prev, newPaymentMethod]);
+    setShowPaymentForm(false);
+    setPaymentFormData({
+      cardNumber: '',
+      expiryDate: '',
+      cvv: '',
+      cardName: '',
+      mpesaNumber: ''
+    });
+  };
+
+  const deletePaymentMethod = (paymentId) => {
+    if (window.confirm('Are you sure you want to delete this payment method?')) {
+      setSavedPaymentMethods(prev => prev.filter(payment => payment.id !== paymentId));
+    }
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      // Clear all data
+      setProfileData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        location: '',
+        bio: ''
+      });
+      setProfileImage(null);
+      setSavedEvents([]);
+      setSavedPaymentMethods([]);
+      setActiveSection('overview');
+      console.log('User logged out');
+    }
+  };
+
+  const menuItems = [
+    { id: 'overview', icon: <Sparkles className="w-5 h-5" />, label: 'Overview', color: '#D97B29' },
+    { id: 'profile', icon: <User className="w-5 h-5" />, label: 'My Profile', color: '#8FB996' },
+    { id: 'events', icon: <Calendar className="w-5 h-5" />, label: 'My Events', color: '#E69D4F' },
+    { id: 'vendors', icon: <Users className="w-5 h-5" />, label: 'Find Vendors', color: '#D97B29' },
+    { id: 'payments', icon: <CreditCard className="w-5 h-5" />, label: 'Payments', color: '#8FB996' }
+  ];
+
+  const renderOverview = () => {
+    const userName = profileData.firstName || 'Creative';
+    const eventCount = savedEvents.length;
+    const paymentMethodCount = savedPaymentMethods.length;
+    
+    return (
+      <div className="space-y-8">
+        {/* Personalized Welcome Section */}
+        <div className="relative overflow-hidden rounded-3xl p-8" style={{ 
+          background: 'linear-gradient(135deg, #D97B29 0%, #E69D4F 100%)' 
+        }}>
+          <div className="relative z-10">
+            <h1 className="text-4xl font-black text-white mb-4">
+              Welcome back, {userName}! ✨
+            </h1>
+            <p className="text-white/90 text-lg">
+              {hasProfileData() 
+                ? "Ready to bring another Pinterest vision to life?" 
+                : "Let's get started with your creative journey!"
+              }
+            </p>
+          </div>
+          <div className="absolute top-4 right-4 text-4xl opacity-30 animate-bounce">🎨</div>
+          <div className="absolute bottom-4 right-12 text-3xl opacity-20 animate-pulse">💐</div>
+          <div className="absolute top-1/2 right-20 text-2xl opacity-25 animate-bounce" style={{ animationDelay: '1s' }}>✨</div>
+        </div>
+
+        {/* Personalized Stats */}
+        <div className="grid md:grid-cols-4 gap-6">
+          {[
+            { label: 'Events Planned', value: eventCount.toString(), icon: '🎉', color: '#D97B29' },
+            { label: 'Payment Methods', value: paymentMethodCount.toString(), icon: '💳', color: '#8FB996' },
+            { label: 'Profile Complete', value: hasProfileData() ? '✓' : '○', icon: '👤', color: '#E69D4F' },
+            { label: 'Happy Moments', value: eventCount > 0 ? '💕' : '○', icon: '💫', color: '#D97B29' }
+          ].map((stat, index) => (
+            <div key={index} className="bg-white rounded-2xl p-6 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300 hover:transform hover:-translate-y-2 group">
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{stat.icon}</div>
+              <div className="text-3xl font-black mb-1" style={{ color: stat.color }}>{stat.value}</div>
+              <div className="text-sm font-medium" style={{ color: '#7A5C38' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-2 gap-8">
+          <div 
+            className="bg-white rounded-3xl p-8 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300 cursor-pointer group hover:transform hover:-translate-y-1"
+            onClick={() => setShowEventForm(true)}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <Plus className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: '#3D2914' }}>Plan New Event</h3>
+                <p className="text-sm" style={{ color: '#7A5C38' }}>Start your next celebration</p>
+              </div>
+            </div>
+            <p className="leading-relaxed mb-4" style={{ color: '#7A5C38' }}>
+              Transform your Pinterest boards into reality with our expert planning team.
+            </p>
+            <div className="flex items-center gap-2 text-orange-600 font-semibold group-hover:gap-3 transition-all">
+              Start Planning <ChevronRight className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div 
+            className="bg-white rounded-3xl p-8 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300 cursor-pointer group hover:transform hover:-translate-y-1"
+            onClick={() => setActiveSection('profile')}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <User className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: '#3D2914' }}>
+                  {hasProfileData() ? 'Update Profile' : 'Complete Profile'}
+                </h3>
+                <p className="text-sm" style={{ color: '#7A5C38' }}>
+                  {hasProfileData() ? 'Manage your information' : 'Tell us about yourself'}
+                </p>
+              </div>
+            </div>
+            <p className="leading-relaxed mb-4" style={{ color: '#7A5C38' }}>
+              {hasProfileData() 
+                ? 'Update your profile information and preferences.'
+                : 'Complete your profile to get personalized recommendations.'
+              }
+            </p>
+            <div className="flex items-center gap-2 text-green-600 font-semibold group-hover:gap-3 transition-all">
+              {hasProfileData() ? 'Manage Profile' : 'Complete Profile'} <ChevronRight className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        {(savedEvents.length > 0 || savedPaymentMethods.length > 0) && (
+          <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+            <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Recent Activity</h3>
+            <div className="space-y-4">
+              {savedEvents.slice(-3).map((event) => (
+                <div key={event.id} className="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl">
+                  <div className="w-10 h-10 bg-orange-200 rounded-full flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold" style={{ color: '#3D2914' }}>{event.eventName}</p>
+                    <p className="text-sm" style={{ color: '#7A5C38' }}>
+                      {event.eventType} • {new Date(event.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderProfile = () => {
+    const currentData = isEditingProfile ? editingData : profileData;
+    
+    if (!hasProfileData() && !isEditingProfile) {
+      // Show form for new users
+      return (
+        <div className="space-y-8">
+          <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+            <h2 className="text-3xl font-black mb-8" style={{ color: '#3D2914' }}>
+              Create Your Creative Profile
+            </h2>
+            
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-orange-200 group-hover:border-orange-300 transition-colors">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-orange-200 to-orange-300 flex items-center justify-center">
+                      <User className="w-12 h-12 text-white" />
+                    </div>
+                  )}
+                </div>
+                <label className="absolute bottom-0 right-0 w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-700 transition-colors shadow-lg">
+                  <Camera className="w-5 h-5 text-white" />
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
+              </div>
+
+              <div className="flex-1 space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>First Name</label>
+                    <input
+                      type="text"
+                      value={currentData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                      placeholder="Your first name"
+                      style={{ color: '#3D2914' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Last Name</label>
+                    <input
+                      type="text"
+                      value={currentData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                      placeholder="Your last name"
+                      style={{ color: '#3D2914' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Email</label>
+                    <input
+                      type="email"
+                      value={currentData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                      placeholder="your.email@example.com"
+                      style={{ color: '#3D2914' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Phone</label>
+                    <input
+                      type="tel"
+                      value={currentData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                      placeholder="+254 123 456 789"
+                      style={{ color: '#3D2914' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Location</label>
+                  <input
+                    type="text"
+                    value={currentData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                    placeholder="City, County"
+                    style={{ color: '#3D2914' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>About You</label>
+                  <textarea
+                    value={currentData.bio}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                    rows="4"
+                    className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg resize-none"
+                    placeholder="Tell us about your event style and what inspires you..."
+                    style={{ color: '#3D2914' }}
+                  />
+                </div>
+
+                <button 
+                  onClick={saveProfile}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show saved profile with edit/delete options
+    return (
+      <div className="space-y-8">
+        {/* Success Message */}
+        {profileSaved && (
+          <div className="bg-green-100 border-2 border-green-200 rounded-2xl p-4 flex items-center gap-3">
+            <CheckCircle className="w-6 h-6 text-green-600" />
+            <span className="font-semibold text-green-800">Profile saved successfully!</span>
+          </div>
+        )}
+
+        {/* Profile Header with Actions */}
+        <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+          <div className="flex justify-between items-start mb-8">
+            <h2 className="text-3xl font-black" style={{ color: '#3D2914' }}>
+              {isEditingProfile ? 'Edit Profile' : 'Your Creative Profile'}
+            </h2>
+            
+            <div className="flex gap-3">
+              {isEditingProfile ? (
+                <>
+                  <button 
+                    onClick={saveProfile}
+                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save
+                  </button>
+                  <button 
+                    onClick={cancelEditingProfile}
+                    className="flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-gray-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={startEditingProfile}
+                    className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-orange-700 transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button 
+                    onClick={deleteEntireProfile}
+                    className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-red-700 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Profile
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            {/* Profile Image */}
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-orange-200 group-hover:border-orange-300 transition-colors">
+                {profileImage ? (
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-orange-200 to-orange-300 flex items-center justify-center">
+                    <User className="w-12 h-12 text-white" />
+                  </div>
+                )}
+              </div>
+              {isEditingProfile && (
+                <label className="absolute bottom-0 right-0 w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-700 transition-colors shadow-lg">
+                  <Camera className="w-5 h-5 text-white" />
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
+              )}
+            </div>
+
+            {/* Profile Information */}
+            <div className="flex-1 space-y-6">
+              {isEditingProfile ? (
+                // Edit Mode
+                <>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>First Name</label>
+                      <input
+                        type="text"
+                        value={currentData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                        style={{ color: '#3D2914' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Last Name</label>
+                      <input
+                        type="text"
+                        value={currentData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                        style={{ color: '#3D2914' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Email</label>
+                      <input
+                        type="email"
+                        value={currentData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                        style={{ color: '#3D2914' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Phone</label>
+                      <input
+                        type="tel"
+                        value={currentData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                        style={{ color: '#3D2914' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Location</label>
+                    <input
+                      type="text"
+                      value={currentData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                      style={{ color: '#3D2914' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>About You</label>
+                    <textarea
+                      value={currentData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      rows="4"
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg resize-none"
+                      style={{ color: '#3D2914' }}
+                    />
+                  </div>
+                </>
+              ) : (
+                // View Mode
+                <>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-orange-50 p-4 rounded-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>First Name</label>
+                        <button 
+                          onClick={() => deleteProfileField('firstName')}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                        {profileData.firstName || 'Not provided'}
+                      </p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Last Name</label>
+                        <button 
+                          onClick={() => deleteProfileField('lastName')}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                        {profileData.lastName || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-orange-50 p-4 rounded-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Email</label>
+                        <button 
+                          onClick={() => deleteProfileField('email')}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                        {profileData.email || 'Not provided'}
+                      </p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Phone</label>
+                        <button 
+                          onClick={() => deleteProfileField('phone')}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                        {profileData.phone || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-orange-50 p-4 rounded-2xl">
+                    <div className="flex justify-between items-start mb-2">
+                      <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Location</label>
+                      <button 
+                        onClick={() => deleteProfileField('location')}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                      {profileData.location || 'Not provided'}
+                    </p>
+                  </div>
+
+                  <div className="bg-orange-50 p-4 rounded-2xl">
+                    <div className="flex justify-between items-start mb-2">
+                      <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>About You</label>
+                      <button 
+                        onClick={() => deleteProfileField('bio')}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                      {profileData.bio || 'Not provided'}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEvents = () => (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-black" style={{ color: '#3D2914' }}>My Events</h2>
+        <button 
+          onClick={() => setShowEventForm(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-2xl font-bold hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <Plus className="w-5 h-5" />
+          New Event
+        </button>
+      </div>
+
+      {savedEvents.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 border-2 border-orange-100 text-center">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="w-10 h-10 text-orange-600" />
+          </div>
+          <h3 className="text-2xl font-bold mb-4" style={{ color: '#3D2914' }}>No events yet</h3>
+          <p className="mb-6" style={{ color: '#7A5C38' }}>Start planning your first event to bring your Pinterest visions to life!</p>
+          <button 
+            onClick={() => setShowEventForm(true)}
+            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-8 py-3 rounded-2xl font-bold hover:transform hover:-translate-y-1 transition-all duration-300"
+          >
+            Create Your First Event
+          </button>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {savedEvents.map((event) => (
+            <div key={event.id} className="bg-white rounded-3xl p-6 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300 hover:transform hover:-translate-y-2">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-bold" style={{ color: '#3D2914' }}>{event.eventName}</h3>
+                <button 
+                  onClick={() => deleteEvent(event.id)}
+                  className="text-red-500 hover:text-red-700 transition-colors p-2 rounded-lg hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Calendar className="w-3 h-3 text-orange-600" />
+                  </div>
+                  <span style={{ color: '#7A5C38' }}>{new Date(event.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="w-3 h-3 text-orange-600" />
+                  </div>
+                  <span style={{ color: '#7A5C38' }}>Budget: KSh {event.budget}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Users className="w-3 h-3 text-orange-600" />
+                  </div>
+                  <span style={{ color: '#7A5C38' }}>{event.guests} guests</span>
+                </div>
+              </div>
+              {event.description && (
+                <div className="mt-4 pt-4 border-t border-orange-100">
+                  <p className="text-sm" style={{ color: '#7A5C38' }}>{event.description}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderVendors = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-black" style={{ color: '#3D2914' }}>Find Vendors</h2>
+      
+      <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { name: 'Photographers', icon: '📸', color: '#D97B29' },
+            { name: 'Caterers', icon: '🍽️', color: '#8FB996' },
+            { name: 'Florists', icon: '💐', color: '#E69D4F' },
+            { name: 'Venues', icon: '🏛️', color: '#D97B29' },
+            { name: 'Makeup Artists', icon: '💄', color: '#8FB996' },
+            { name: 'DJs & Music', icon: '🎵', color: '#E69D4F' },
+            { name: 'Decor & Rentals', icon: '🎪', color: '#D97B29' },
+            { name: 'Transportation', icon: '🚗', color: '#8FB996' }
+          ].map((vendor, index) => (
+            <div key={index} className="bg-orange-50 rounded-2xl p-6 text-center cursor-pointer hover:transform hover:-translate-y-2 transition-all duration-300 group">
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{vendor.icon}</div>
+              <h3 className="font-semibold" style={{ color: '#3D2914' }}>{vendor.name}</h3>
+              <div className="w-12 h-1 mx-auto mt-2 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+        <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Recommended for You</h3>
+        <div className="space-y-4">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors cursor-pointer">
+              <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl flex items-center justify-center text-white text-2xl">
+                {item === 1 ? '📸' : item === 2 ? '💐' : '🍽️'}
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold" style={{ color: '#3D2914' }}>
+                  {item === 1 ? 'Capture Moments Studio' : item === 2 ? 'Bloom Florals' : 'Taste of Kenya Catering'}
+                </h4>
+                <p className="text-sm" style={{ color: '#7A5C38' }}>
+                  {item === 1 ? 'Professional wedding photography' : item === 2 ? 'Fresh floral arrangements' : 'Authentic Kenyan cuisine'}
+                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="w-4 h-4 fill-current text-orange-400" />
+                  ))}
+                  <span className="text-sm ml-2" style={{ color: '#7A5C38' }}>4.9 (128 reviews)</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-orange-600" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPayments = () => (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-black" style={{ color: '#3D2914' }}>Payment Methods</h2>
+        <button 
+          onClick={() => setShowPaymentForm(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-2xl font-bold hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <Plus className="w-5 h-5" />
+          Add Payment Method
+        </button>
+      </div>
+
+      {savedPaymentMethods.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 border-2 border-orange-100 text-center">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CreditCard className="w-10 h-10 text-orange-600" />
+          </div>
+          <h3 className="text-2xl font-bold mb-4" style={{ color: '#3D2914' }}>No payment methods</h3>
+          <p className="mb-6" style={{ color: '#7A5C38' }}>Add a payment method to make booking vendors easier!</p>
+          <button 
+            onClick={() => setShowPaymentForm(true)}
+            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-8 py-3 rounded-2xl font-bold hover:transform hover:-translate-y-1 transition-all duration-300"
+          >
+            Add Payment Method
+          </button>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-6">
+          {savedPaymentMethods.map((payment) => (
+            <div key={payment.id} className="bg-white rounded-3xl p-6 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold" style={{ color: '#3D2914' }}>
+                      {payment.type === 'card' ? 'Credit/Debit Card' : 'M-Pesa'}
+                    </h3>
+                    <p className="text-sm" style={{ color: '#7A5C38' }}>
+                      Added {new Date(payment.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => deletePaymentMethod(payment.id)}
+                  className="text-red-500 hover:text-red-700 transition-colors p-2 rounded-lg hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {payment.type === 'card' ? (
+                <div className="space-y-2">
+                  <p className="font-mono text-lg" style={{ color: '#3D2914' }}>{payment.cardNumber}</p>
+                  <div className="flex justify-between">
+                    <span style={{ color: '#7A5C38' }}>{payment.cardName}</span>
+                    <span style={{ color: '#7A5C38' }}>Exp: {payment.expiryDate}</span>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="font-mono text-lg" style={{ color: '#3D2914' }}>{payment.mpesaNumber}</p>
+                  <span style={{ color: '#7A5C38' }}>M-Pesa Mobile Money</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+        <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Payment History</h3>
+        <div className="space-y-4">
+          {savedEvents.slice(0, 3).map((event) => (
+            <div key={event.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-2xl">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-orange-200 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: '#3D2914' }}>Deposit for {event.eventName}</p>
+                  <p className="text-sm" style={{ color: '#7A5C38' }}>
+                    {new Date(event.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold" style={{ color: '#3D2914' }}>KSh {(event.budget * 0.3).toLocaleString()}</p>
+                <div className="flex items-center gap-1 text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm">Completed</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Modal Components
+  const EventFormModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-black" style={{ color: '#3D2914' }}>Plan New Event</h2>
+          <button onClick={() => setShowEventForm(false)} className="text-gray-500 hover:text-gray-700">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleEventSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Event Name</label>
+              <input
+                type="text"
+                value={eventFormData.eventName}
+                onChange={(e) => handleEventInputChange('eventName', e.target.value)}
+                className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                placeholder="e.g., Wedding, Birthday"
+                required
+                style={{ color: '#3D2914' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Event Type</label>
+              <select
+                value={eventFormData.eventType}
+                onChange={(e) => handleEventInputChange('eventType', e.target.value)}
+                className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                required
+                style={{ color: '#3D2914' }}
+              >
+                <option value="">Select type</option>
+                <option value="Wedding">Wedding</option>
+                <option value="Birthday">Birthday</option>
+                <option value="Baby Shower">Baby Shower</option>
+                <option value="Corporate">Corporate Event</option>
+                <option value="Graduation">Graduation</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Date</label>
+              <input
+                type="date"
+                value={eventFormData.date}
+                onChange={(e) => handleEventInputChange('date', e.target.value)}
+                className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                required
+                style={{ color: '#3D2914' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Budget (KSh)</label>
+              <input
+                type="number"
+                value={eventFormData.budget}
+                onChange={(e) => handleEventInputChange('budget', e.target.value)}
+                className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                placeholder="50000"
+                required
+                style={{ color: '#3D2914' }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Number of Guests</label>
+            <input
+              type="number"
+              value={eventFormData.guests}
+              onChange={(e) => handleEventInputChange('guests', e.target.value)}
+              className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+              placeholder="50"
+              required
+              style={{ color: '#3D2914' }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Description</label>
+            <textarea
+              value={eventFormData.description}
+              onChange={(e) => handleEventInputChange('description', e.target.value)}
+              rows="4"
+              className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors resize-none"
+              placeholder="Describe your event vision, theme, or any special requirements..."
+              style={{ color: '#3D2914' }}
+            />
+          </div>
+
+          <button 
+            type="submit"
+            className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            Create Event
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  const PaymentFormModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-black" style={{ color: '#3D2914' }}>Add Payment Method</h2>
+          <button onClick={() => setShowPaymentForm(false)} className="text-gray-500 hover:text-gray-700">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="flex gap-4 mb-6">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('card')}
+            className={`flex-1 py-3 rounded-2xl font-semibold transition-all ${
+              paymentMethod === 'card' 
+                ? 'bg-orange-600 text-white shadow-lg' 
+                : 'bg-orange-100 text-orange-800'
+            }`}
+          >
+            Credit/Debit Card
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('mpesa')}
+            className={`flex-1 py-3 rounded-2xl font-semibold transition-all ${
+              paymentMethod === 'mpesa' 
+                ? 'bg-green-600 text-white shadow-lg' 
+                : 'bg-green-100 text-green-800'
+            }`}
+          >
+            M-Pesa
+          </button>
+        </div>
+        
+        <form onSubmit={handlePaymentSubmit} className="space-y-6">
+          {paymentMethod === 'card' ? (
+            <>
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Card Number</label>
+                <input
+                  type="text"
+                  value={paymentFormData.cardNumber}
+                  onChange={(e) => handlePaymentInputChange('cardNumber', e.target.value)}
+                  className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                  placeholder="1234 5678 9012 3456"
+                  required
+                  style={{ color: '#3D2914' }}
+                />
+              </div>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Expiry Date</label>
+                  <input
+                    type="text"
+                    value={paymentFormData.expiryDate}
+                    onChange={(e) => handlePaymentInputChange('expiryDate', e.target.value)}
+                    className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                    placeholder="MM/YY"
+                    required
+                    style={{ color: '#3D2914' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>CVV</label>
+                  <input
+                    type="text"
+                    value={paymentFormData.cvv}
+                    onChange={(e) => handlePaymentInputChange('cvv', e.target.value)}
+                    className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                    placeholder="123"
+                    required
+                    style={{ color: '#3D2914' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Card Name</label>
+                  <input
+                    type="text"
+                    value={paymentFormData.cardName}
+                    onChange={(e) => handlePaymentInputChange('cardName', e.target.value)}
+                    className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                    placeholder="John Doe"
+                    required
+                    style={{ color: '#3D2914' }}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>M-Pesa Phone Number</label>
+              <input
+                type="tel"
+                value={paymentFormData.mpesaNumber}
+                onChange={(e) => handlePaymentInputChange('mpesaNumber', e.target.value)}
+                className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
+                placeholder="07XX XXX XXX"
+                required
+                style={{ color: '#3D2914' }}
+              />
+              <p className="text-sm mt-2" style={{ color: '#7A5C38' }}>
+                We'll send a confirmation prompt to this number
+              </p>
+            </div>
+          )}
+
+          <button 
+            type="submit"
+            className={`w-full text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl ${
+              paymentMethod === 'card' 
+                ? 'bg-gradient-to-r from-orange-600 to-orange-700' 
+                : 'bg-gradient-to-r from-green-600 to-green-700'
+            }`}
+          >
+            Add Payment Method
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+      {/* Header */}
+      <header className="bg-white border-b-2 border-orange-100 p-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-orange-600 to-orange-700 rounded-xl flex items-center justify-center text-white font-black text-xl">
+              K
+            </div>
+            <h1 className="text-2xl font-black" style={{ color: '#3D2914' }}>Kinsi</h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button className="p-2 rounded-xl hover:bg-orange-50 transition-colors">
+              <Bell className="w-6 h-6" style={{ color: '#7A5C38' }} />
+            </button>
+            <button className="p-2 rounded-xl hover:bg-orange-50 transition-colors">
+              <Settings className="w-6 h-6" style={{ color: '#7A5C38' }} />
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-xl font-semibold hover:bg-orange-200 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto p-4">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="lg:w-64 flex-shrink-0">
+            <nav className="bg-white rounded-3xl p-6 border-2 border-orange-100 sticky top-8">
+              <ul className="space-y-2">
+                {menuItems.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => setActiveSection(item.id)}
+                      className={`w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-all duration-300 ${
+                        activeSection === item.id
+                          ? 'text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-orange-50'
+                      }`}
+                      style={{
+                        backgroundColor: activeSection === item.id ? item.color : 'transparent'
+                      }}
+                    >
+                      {item.icon}
+                      <span className="font-semibold">{item.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="mt-8 p-4 bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl">
+                <h3 className="font-bold mb-2" style={{ color: '#3D2914' }}>Need help?</h3>
+                <p className="text-sm mb-3" style={{ color: '#7A5C38' }}>Our team is here to assist you</p>
+                <button className="w-full bg-orange-600 text-white py-2 rounded-xl font-semibold hover:bg-orange-700 transition-colors">
+                  Contact Support
+                </button>
+              </div>
+            </nav>
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1">
+            {activeSection === 'overview' && renderOverview()}
+            {activeSection === 'profile' && renderProfile()}
+            {activeSection === 'events' && renderEvents()}
+            {activeSection === 'vendors' && renderVendors()}
+            {activeSection === 'payments' && renderPayments()}
+          </main>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showEventForm && <EventFormModal />}
+      {showPaymentForm && <PaymentFormModal />}
+    </div>
+  );
+};
+
+export default KinsiDashboard;
