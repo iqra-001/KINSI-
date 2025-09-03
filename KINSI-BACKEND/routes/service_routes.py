@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app import db
-from app.models.services import Service
-from app.models.vendors import Vendor
+from db.KINSI import db
+from models.services import Service
+from models.vendors import Vendor
 import json
 
 service_bp = Blueprint("service_bp", __name__)
