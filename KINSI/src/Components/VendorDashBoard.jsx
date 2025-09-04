@@ -23,11 +23,7 @@ const VendorDashboard = () => {
   const [currentUserId] = useState(1);
   const [vendorId, setVendorId] = useState(null);
 
-  const [notifications] = useState([
-    { id: 1, type: 'favorite', message: 'Sarah M. favorited your Photography service', time: '2 minutes ago', read: false },
-    { id: 2, type: 'inquiry', message: 'New inquiry for Wedding Planning from John D.', time: '15 minutes ago', read: false },
-    { id: 3, type: 'booking', message: 'Booking confirmed for Birthday Party', time: '1 hour ago', read: true },
-  ]);
+  const [notifications, setNotifications] = useState([]); // Updated: dynamic notifications
 
   const [vendorProfile, setVendorProfile] = useState({
     businessName: '',
@@ -126,6 +122,9 @@ const VendorDashboard = () => {
         
         // Load stats
         await loadVendorStats(vendorData.id);
+        
+        // New: Load notifications
+        await loadNotifications(vendorData.id);
       }
     } catch (error) {
       console.log('No existing vendor profile found');
@@ -149,6 +148,16 @@ const VendorDashboard = () => {
       setVendorStats(statsData);
     } catch (error) {
       console.error('Error loading stats:', error);
+    }
+  };
+
+  // New: Load notifications/alerts
+  const loadNotifications = async (vendorId) => {
+    try {
+      const notifs = await apiCall(`/vendor/notifications/${vendorId}`);
+      setNotifications(notifs.notifications || []);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
     }
   };
 
@@ -467,7 +476,7 @@ const VendorDashboard = () => {
         <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Recent Services</h3>
         {services.length > 0 ? (
           <div className="space-y-4">
-            {services.slice(0, 5).map((service, index) => (
+            {services.slice(0, 5).map((service) => (
               <div key={service.id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-green-50 to-orange-50 rounded-2xl">
                 <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
                   <Package className="w-5 h-5 text-white" />

@@ -8,8 +8,12 @@ from flask_jwt_extended import (
 from models.user import User
 from models.tokenblocklist import TokenBlocklist
 from db.KINSI import db
-from datetime import datetime, timedelta
+from datetime import datetime
 from utils.validators import validate_user_data
+
+# Google OAuth imports
+from google.oauth2 import id_token
+from google.auth.transport import requests as grequests
 
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -17,6 +21,7 @@ auth_bp = Blueprint('auth_bp', __name__)
 @auth_bp.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "Welcome to the Wedding Vendor API!!"})
+
 
 # ==================== Register ====================
 @auth_bp.route('/register', methods=['POST'])
@@ -55,6 +60,7 @@ def register():
         "user": user.to_dict()
     }), 201
 
+
 # ==================== Login ====================
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -78,6 +84,43 @@ def login():
     }), 200
 
 
+# ==================== Google Login/Signup ====================
+@auth_bp.route('/google-login', methods=['POST'])
+def google_login():
+    data = request.get_json()
+    token = data.get("token")
+
+    if not token:
+        return jsonify({"error": "Missing Google token"}), 400
+
+    try:
+        # Verify the token with Google
+        idinfo = id_token.verify_oauth2_token(token, grequests.Request())
+
+        email = idinfo["email"]
+        username = idinfo.get("name", email.split("@")[0])
+
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Auto-create user if they don’t exist
+            user = User(username=username, email=email, role="user")
+            db.session.add(user)
+            db.session.commit()
+
+        # Generate token
+        access_token = create_access_token(identity=user.id)
+
+        return jsonify({
+            "message": "Google login successful",
+            "access_token": access_token,
+            "user": user.to_dict()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": "Invalid Google token", "details": str(e)}), 400
+
+
 # ==================== Logout ====================
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
@@ -87,6 +130,7 @@ def logout():
     db.session.add(TokenBlocklist(jti=jti, created_at=now))
     db.session.commit()
     return jsonify({"message": "Successfully logged out"}), 200
+
 
 # ==================== Get Current User ====================
 @auth_bp.route('/me', methods=['GET'])

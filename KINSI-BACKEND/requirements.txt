@@ -26,3 +26,9 @@ SQLAlchemy-serializer==1.4.12
 typing_extensions==4.13.2
 Werkzeug==3.0.6
 zipp==3.20.2
+
+# ✅ Google OAuth2 dependencies
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+requests==2.32.3

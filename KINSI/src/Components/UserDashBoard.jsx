@@ -4,7 +4,7 @@ import {
   Camera, Edit3, Heart, Sparkles, ChevronRight, Plus,
   MapPin, Phone, Mail, Star, ArrowLeft, Upload,
   CheckCircle, Clock, DollarSign, Package, LogOut, X,
-  Save, Trash2, Edit
+  Save, Trash2, Edit, AlertCircle, Filter, MessageCircle
 } from 'lucide-react';
 
 const KinsiDashboard = () => {
@@ -42,7 +42,8 @@ const KinsiDashboard = () => {
     date: '',
     budget: '',
     guests: '',
-    description: ''
+    description: '',
+    vendor_types: [] // New: array of needed vendor types
   });
 
   const [paymentFormData, setPaymentFormData] = useState({
@@ -61,6 +62,16 @@ const KinsiDashboard = () => {
     payment_methods_count: 0,
     profile_complete: false,
     happy_moments: false
+  });
+
+  // New: Vendors data
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [vendorServices, setVendorServices] = useState([]);
+  const [showVendorDetails, setShowVendorDetails] = useState(false);
+  const [inquiryFormData, setInquiryFormData] = useState({
+    message: '',
+    service_id: null
   });
 
   // API Configuration
@@ -109,7 +120,8 @@ const KinsiDashboard = () => {
         loadProfile(),
         loadEvents(),
         loadPaymentMethods(),
-        loadDashboardOverview()
+        loadDashboardOverview(),
+        loadVendors() // New: load vendors
       ]);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -160,6 +172,26 @@ const KinsiDashboard = () => {
     }
   };
 
+  // New: Load vendors
+  const loadVendors = async () => {
+    try {
+      const response = await apiCall('/vendors');
+      setVendors(response.vendors || []);
+    } catch (error) {
+      console.error('Failed to load vendors:', error);
+    }
+  };
+
+  // New: Load vendor services
+  const loadVendorServices = async (vendorId) => {
+    try {
+      const response = await apiCall(`/vendor/services/${vendorId}`);
+      setVendorServices(response.services || []);
+    } catch (error) {
+      console.error('Failed to load vendor services:', error);
+    }
+  };
+
   // Check if profile has any data
   const hasProfileData = () => {
     return Object.values(profileData).some(value => value && value.trim() !== '');
@@ -192,6 +224,16 @@ const KinsiDashboard = () => {
     setEventFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  // New: Handle vendor types multi-select
+  const toggleVendorType = (type) => {
+    setEventFormData(prev => ({
+      ...prev,
+      vendor_types: prev.vendor_types.includes(type)
+        ? prev.vendor_types.filter(t => t !== type)
+        : [...prev.vendor_types, type]
     }));
   };
 
@@ -299,7 +341,8 @@ const KinsiDashboard = () => {
         date: '',
         budget: '',
         guests: '',
-        description: ''
+        description: '',
+        vendor_types: []
       });
       
       // Reload dashboard stats
@@ -383,6 +426,37 @@ const KinsiDashboard = () => {
       sessionStorage.removeItem('access_token');
       // Redirect to login page or reload
       window.location.href = '/login';
+    }
+  };
+
+  // New: Handle vendor selection
+  const handleViewVendor = async (vendor) => {
+    setSelectedVendor(vendor);
+    await loadVendorServices(vendor.id);
+    setShowVendorDetails(true);
+  };
+
+  // New: Handle inquiry submit
+  const handleInquirySubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = {
+        vendor_id: selectedVendor.id,
+        service_id: inquiryFormData.service_id,
+        message: inquiryFormData.message
+      };
+      await apiCall('/inquiries', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      setInquiryFormData({ message: '', service_id: null });
+      setError(''); // Clear error
+      alert('Inquiry sent successfully!');
+    } catch (error) {
+      console.error('Failed to send inquiry:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -626,7 +700,7 @@ const KinsiDashboard = () => {
           </div>
         </div>
       );
-    }
+    };
 
     // Show saved profile with edit/delete options
     return (
@@ -930,54 +1004,69 @@ const KinsiDashboard = () => {
     <div className="space-y-8">
       <h2 className="text-3xl font-black" style={{ color: '#3D2914' }}>Find Vendors</h2>
       
-      <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { name: 'Photographers', icon: '📸', color: '#D97B29' },
-            { name: 'Caterers', icon: '🍽️', color: '#8FB996' },
-            { name: 'Florists', icon: '💐', color: '#E69D4F' },
-            { name: 'Venues', icon: '🏛️', color: '#D97B29' },
-            { name: 'Makeup Artists', icon: '💄', color: '#8FB996' },
-            { name: 'DJs & Music', icon: '🎵', color: '#E69D4F' },
-            { name: 'Decor & Rentals', icon: '🎪', color: '#D97B29' },
-            { name: 'Transportation', icon: '🚗', color: '#8FB996' }
-          ].map((vendor, index) => (
-            <div key={index} className="bg-orange-50 rounded-2xl p-6 text-center cursor-pointer hover:transform hover:-translate-y-2 transition-all duration-300 group">
-              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{vendor.icon}</div>
-              <h3 className="font-semibold" style={{ color: '#3D2914' }}>{vendor.name}</h3>
-              <div className="w-12 h-1 mx-auto mt-2 rounded-full" style={{ backgroundColor: vendor.color }}></div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
-        <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Recommended for You</h3>
-        <div className="space-y-4">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors cursor-pointer">
-              <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl flex items-center justify-center text-white text-2xl">
-                {item === 1 ? '📸' : item === 2 ? '💐' : '🍽️'}
+      {showVendorDetails ? (
+        <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+          <button onClick={() => setShowVendorDetails(false)} className="flex items-center gap-2 mb-4 text-orange-600">
+            <ArrowLeft className="w-5 h-5" />
+            Back to Vendors
+          </button>
+          <h3 className="text-2xl font-bold mb-4" style={{ color: '#3D2914' }}>{selectedVendor.business_name}</h3>
+          <p className="mb-4" style={{ color: '#7A5C38' }}>{selectedVendor.description}</p>
+          <h4 className="text-xl font-bold mb-4" style={{ color: '#3D2914' }}>Services</h4>
+          <div className="space-y-4">
+            {vendorServices.map((service) => (
+              <div key={service.id} className="p-4 bg-orange-50 rounded-2xl">
+                <h5 className="font-semibold" style={{ color: '#3D2914' }}>{service.service_name}</h5>
+                <p style={{ color: '#7A5C38' }}>KSh {service.price} - {service.duration}</p>
+                <p style={{ color: '#7A5C38' }}>{service.description}</p>
+                <button 
+                  onClick={() => setInquiryFormData({ ...inquiryFormData, service_id: service.id })}
+                  className="mt-2 bg-orange-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-orange-700 transition-colors"
+                >
+                  Inquire
+                </button>
               </div>
-              <div className="flex-1">
-                <h4 className="font-bold" style={{ color: '#3D2914' }}>
-                  {item === 1 ? 'Capture Moments Studio' : item === 2 ? 'Bloom Florals' : 'Taste of Kenya Catering'}
-                </h4>
-                <p className="text-sm" style={{ color: '#7A5C38' }}>
-                  {item === 1 ? 'Professional wedding photography' : item === 2 ? 'Fresh floral arrangements' : 'Authentic Kenyan cuisine'}
-                </p>
-                <div className="flex items-center gap-1 mt-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-4 h-4 fill-current text-orange-400" />
-                  ))}
-                  <span className="text-sm ml-2" style={{ color: '#7A5C38' }}>4.9 (128 reviews)</span>
+            ))}
+          </div>
+          <form onSubmit={handleInquirySubmit} className="mt-6 space-y-4">
+            <textarea
+              value={inquiryFormData.message}
+              onChange={(e) => setInquiryFormData({ ...inquiryFormData, message: e.target.value })}
+              rows="4"
+              className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors resize-none"
+              placeholder="Your inquiry message..."
+              style={{ color: '#3D2914' }}
+            />
+            <button 
+              type="submit"
+              disabled={loading || !inquiryFormData.message}
+              className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send Inquiry'}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <>
+          <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
+            <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Available Vendors</h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {vendors.map((vendor) => (
+                <div key={vendor.id} className="bg-orange-50 rounded-2xl p-6 text-center cursor-pointer hover:transform hover:-translate-y-2 transition-all duration-300 group" onClick={() => handleViewVendor(vendor)}>
+                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">🏪</div>
+                  <h3 className="font-semibold" style={{ color: '#3D2914' }}>{vendor.business_name}</h3>
+                  <p className="text-sm" style={{ color: '#7A5C38' }}>{vendor.service_type}</p>
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="w-4 h-4 fill-current text-orange-400" />
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-orange-600" />
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -1177,6 +1266,25 @@ const KinsiDashboard = () => {
               placeholder="Describe your event vision, theme, or any special requirements..."
               style={{ color: '#3D2914' }}
             />
+          </div>
+
+          {/* New: Vendor Types Needed */}
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Vendor Types Needed</label>
+            <div className="grid md:grid-cols-3 gap-2">
+              {['Photography', 'Catering', 'Decoration', 'Venue', 'Music & Entertainment', 'Event Planning', 'Flowers', 'Transportation'].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => toggleVendorType(type)}
+                  className={`p-2 rounded-xl font-semibold transition-colors ${
+                    eventFormData.vendor_types.includes(type) ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-800'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button 
