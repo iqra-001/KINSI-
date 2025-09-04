@@ -15,12 +15,13 @@ const KinsiDashboard = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
   // Profile data with saved state
   const [profileData, setProfileData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
+    first_name: '',
+    last_name: '',
     phone: '',
     location: '',
     bio: ''
@@ -28,17 +29,16 @@ const KinsiDashboard = () => {
 
   // Temporary editing data
   const [editingData, setEditingData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
+    first_name: '',
+    last_name: '',
     phone: '',
     location: '',
     bio: ''
   });
 
   const [eventFormData, setEventFormData] = useState({
-    eventName: '',
-    eventType: '',
+    event_name: '',
+    event_type: '',
     date: '',
     budget: '',
     guests: '',
@@ -46,20 +46,123 @@ const KinsiDashboard = () => {
   });
 
   const [paymentFormData, setPaymentFormData] = useState({
-    cardNumber: '',
-    expiryDate: '',
+    card_number: '',
+    expiry_date: '',
     cvv: '',
-    cardName: '',
-    mpesaNumber: ''
+    card_name: '',
+    mpesa_number: ''
   });
 
-  // Events storage
+  // Data from backend
   const [savedEvents, setSavedEvents] = useState([]);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    events_count: 0,
+    payment_methods_count: 0,
+    profile_complete: false,
+    happy_moments: false
+  });
+
+  // API Configuration
+  const API_BASE_URL = 'http://localhost:5555/api'; // Adjust to your backend URL
+  const getAuthHeaders = () => {
+    const token = sessionStorage.getItem('access_token');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
+  // API Functions
+  const apiCall = async (endpoint, options = {}) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          ...getAuthHeaders(),
+          ...options.headers
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API call failed:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Load all dashboard data
+      await Promise.all([
+        loadProfile(),
+        loadEvents(),
+        loadPaymentMethods(),
+        loadDashboardOverview()
+      ]);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProfile = async () => {
+    try {
+      const response = await apiCall('/profile');
+      if (response.profile) {
+        setProfileData(response.profile);
+        if (response.profile.profile_image) {
+          setProfileImage(response.profile.profile_image);
+        }
+      }
+    } catch (error) {
+      // Profile might not exist yet, which is fine
+      console.log('No profile found');
+    }
+  };
+
+  const loadEvents = async () => {
+    try {
+      const response = await apiCall('/events');
+      setSavedEvents(response.events || []);
+    } catch (error) {
+      console.error('Failed to load events:', error);
+    }
+  };
+
+  const loadPaymentMethods = async () => {
+    try {
+      const response = await apiCall('/payment-methods');
+      setSavedPaymentMethods(response.payment_methods || []);
+    } catch (error) {
+      console.error('Failed to load payment methods:', error);
+    }
+  };
+
+  const loadDashboardOverview = async () => {
+    try {
+      const response = await apiCall('/overview');
+      setDashboardStats(response.stats || {});
+    } catch (error) {
+      console.error('Failed to load dashboard overview:', error);
+    }
+  };
 
   // Check if profile has any data
   const hasProfileData = () => {
-    return Object.values(profileData).some(value => value.trim() !== '');
+    return Object.values(profileData).some(value => value && value.trim() !== '');
   };
 
   const handleImageUpload = (event) => {
@@ -100,13 +203,34 @@ const KinsiDashboard = () => {
   };
 
   // Profile CRUD operations
-  const saveProfile = () => {
-    if (isEditingProfile) {
-      setProfileData(editingData);
-      setIsEditingProfile(false);
+  const saveProfile = async () => {
+    setLoading(true);
+    try {
+      const dataToSave = isEditingProfile ? editingData : profileData;
+      const profilePayload = {
+        ...dataToSave,
+        profile_image: profileImage
+      };
+      
+      const response = await apiCall('/profile', {
+        method: 'PUT',
+        body: JSON.stringify(profilePayload)
+      });
+      
+      setProfileData(response.profile);
+      if (isEditingProfile) {
+        setIsEditingProfile(false);
+      }
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 3000);
+      
+      // Reload dashboard stats
+      await loadDashboardOverview();
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    } finally {
+      setLoading(false);
     }
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 3000);
   };
 
   const startEditingProfile = () => {
@@ -119,109 +243,146 @@ const KinsiDashboard = () => {
     setIsEditingProfile(false);
   };
 
-  const deleteProfileField = (field) => {
+  const deleteProfileField = async (field) => {
     if (window.confirm(`Are you sure you want to delete your ${field}?`)) {
-      if (isEditingProfile) {
-        setEditingData(prev => ({
-          ...prev,
-          [field]: ''
-        }));
-      } else {
-        setProfileData(prev => ({
-          ...prev,
-          [field]: ''
-        }));
+      try {
+        const updatedProfile = { ...profileData, [field]: '' };
+        await apiCall('/profile', {
+          method: 'PUT',
+          body: JSON.stringify(updatedProfile)
+        });
+        setProfileData(updatedProfile);
+      } catch (error) {
+        console.error('Failed to update profile:', error);
       }
     }
   };
 
-  const deleteEntireProfile = () => {
+  const deleteEntireProfile = async () => {
     if (window.confirm('Are you sure you want to delete your entire profile? This action cannot be undone.')) {
-      setProfileData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        location: '',
-        bio: ''
+      try {
+        const emptyProfile = {
+          first_name: '',
+          last_name: '',
+          phone: '',
+          location: '',
+          bio: '',
+          profile_image: ''
+        };
+        await apiCall('/profile', {
+          method: 'PUT',
+          body: JSON.stringify(emptyProfile)
+        });
+        setProfileData(emptyProfile);
+        setProfileImage(null);
+        setIsEditingProfile(false);
+      } catch (error) {
+        console.error('Failed to delete profile:', error);
+      }
+    }
+  };
+
+  const handleEventSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await apiCall('/events', {
+        method: 'POST',
+        body: JSON.stringify(eventFormData)
       });
-      setProfileImage(null);
-      setIsEditingProfile(false);
+      
+      setSavedEvents(prev => [...prev, response.event]);
+      setShowEventForm(false);
+      setEventFormData({
+        event_name: '',
+        event_type: '',
+        date: '',
+        budget: '',
+        guests: '',
+        description: ''
+      });
+      
+      // Reload dashboard stats
+      await loadDashboardOverview();
+    } catch (error) {
+      console.error('Failed to create event:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEventSubmit = (e) => {
-    e.preventDefault();
-    const newEvent = {
-      id: Date.now(),
-      ...eventFormData,
-      createdAt: new Date().toISOString()
-    };
-    setSavedEvents(prev => [...prev, newEvent]);
-    setShowEventForm(false);
-    setEventFormData({
-      eventName: '',
-      eventType: '',
-      date: '',
-      budget: '',
-      guests: '',
-      description: ''
-    });
-  };
-
-  const deleteEvent = (eventId) => {
+  const deleteEvent = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
-      setSavedEvents(prev => prev.filter(event => event.id !== eventId));
+      try {
+        await apiCall(`/events/${eventId}`, {
+          method: 'DELETE'
+        });
+        setSavedEvents(prev => prev.filter(event => event.id !== eventId));
+        await loadDashboardOverview();
+      } catch (error) {
+        console.error('Failed to delete event:', error);
+      }
     }
   };
 
-  const handlePaymentSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    const newPaymentMethod = {
-      id: Date.now(),
-      type: paymentMethod,
-      ...(paymentMethod === 'card' ? {
-        cardNumber: paymentFormData.cardNumber.replace(/\d(?=\d{4})/g, '*'),
-        cardName: paymentFormData.cardName,
-        expiryDate: paymentFormData.expiryDate
-      } : {
-        mpesaNumber: paymentFormData.mpesaNumber
-      }),
-      createdAt: new Date().toISOString()
-    };
-    setSavedPaymentMethods(prev => [...prev, newPaymentMethod]);
-    setShowPaymentForm(false);
-    setPaymentFormData({
-      cardNumber: '',
-      expiryDate: '',
-      cvv: '',
-      cardName: '',
-      mpesaNumber: ''
-    });
+    setLoading(true);
+    try {
+      const paymentPayload = {
+        method_type: paymentMethod,
+        ...(paymentMethod === 'card' ? {
+          card_number: paymentFormData.card_number,
+          card_name: paymentFormData.card_name,
+          expiry_date: paymentFormData.expiry_date
+        } : {
+          mpesa_number: paymentFormData.mpesa_number
+        })
+      };
+      
+      const response = await apiCall('/payment-methods', {
+        method: 'POST',
+        body: JSON.stringify(paymentPayload)
+      });
+      
+      setSavedPaymentMethods(prev => [...prev, response.payment_method]);
+      setShowPaymentForm(false);
+      setPaymentFormData({
+        card_number: '',
+        expiry_date: '',
+        cvv: '',
+        card_name: '',
+        mpesa_number: ''
+      });
+      
+      // Reload dashboard stats
+      await loadDashboardOverview();
+    } catch (error) {
+      console.error('Failed to add payment method:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deletePaymentMethod = (paymentId) => {
+  const deletePaymentMethod = async (paymentId) => {
     if (window.confirm('Are you sure you want to delete this payment method?')) {
-      setSavedPaymentMethods(prev => prev.filter(payment => payment.id !== paymentId));
+      try {
+        await apiCall(`/payment-methods/${paymentId}`, {
+          method: 'DELETE'
+        });
+        setSavedPaymentMethods(prev => prev.filter(payment => payment.id !== paymentId));
+        await loadDashboardOverview();
+      } catch (error) {
+        console.error('Failed to delete payment method:', error);
+      }
     }
   };
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      // Clear all data
-      setProfileData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        location: '',
-        bio: ''
-      });
-      setProfileImage(null);
-      setSavedEvents([]);
-      setSavedPaymentMethods([]);
-      setActiveSection('overview');
-      console.log('User logged out');
+      sessionStorage.removeItem('access_token');
+      // Redirect to login page or reload
+      window.location.href = '/login';
     }
   };
 
@@ -234,12 +395,21 @@ const KinsiDashboard = () => {
   ];
 
   const renderOverview = () => {
-    const userName = profileData.firstName || 'Creative';
-    const eventCount = savedEvents.length;
-    const paymentMethodCount = savedPaymentMethods.length;
+    const userName = profileData.first_name || 'Creative';
     
     return (
       <div className="space-y-8">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-100 border-2 border-red-200 rounded-2xl p-4 flex items-center gap-3">
+            <X className="w-6 h-6 text-red-600" />
+            <span className="font-semibold text-red-800">{error}</span>
+            <button onClick={() => setError('')} className="ml-auto text-red-600 hover:text-red-800">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Personalized Welcome Section */}
         <div className="relative overflow-hidden rounded-3xl p-8" style={{ 
           background: 'linear-gradient(135deg, #D97B29 0%, #E69D4F 100%)' 
@@ -263,10 +433,10 @@ const KinsiDashboard = () => {
         {/* Personalized Stats */}
         <div className="grid md:grid-cols-4 gap-6">
           {[
-            { label: 'Events Planned', value: eventCount.toString(), icon: '🎉', color: '#D97B29' },
-            { label: 'Payment Methods', value: paymentMethodCount.toString(), icon: '💳', color: '#8FB996' },
-            { label: 'Profile Complete', value: hasProfileData() ? '✓' : '○', icon: '👤', color: '#E69D4F' },
-            { label: 'Happy Moments', value: eventCount > 0 ? '💕' : '○', icon: '💫', color: '#D97B29' }
+            { label: 'Events Planned', value: dashboardStats.events_count?.toString() || '0', icon: '🎉', color: '#D97B29' },
+            { label: 'Payment Methods', value: dashboardStats.payment_methods_count?.toString() || '0', icon: '💳', color: '#8FB996' },
+            { label: 'Profile Complete', value: dashboardStats.profile_complete ? '✓' : '○', icon: '👤', color: '#E69D4F' },
+            { label: 'Happy Moments', value: dashboardStats.happy_moments ? '💕' : '○', icon: '💫', color: '#D97B29' }
           ].map((stat, index) => (
             <div key={index} className="bg-white rounded-2xl p-6 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300 hover:transform hover:-translate-y-2 group">
               <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{stat.icon}</div>
@@ -329,7 +499,7 @@ const KinsiDashboard = () => {
         </div>
 
         {/* Recent Activity */}
-        {(savedEvents.length > 0 || savedPaymentMethods.length > 0) && (
+        {savedEvents.length > 0 && (
           <div className="bg-white rounded-3xl p-8 border-2 border-orange-100">
             <h3 className="text-2xl font-bold mb-6" style={{ color: '#3D2914' }}>Recent Activity</h3>
             <div className="space-y-4">
@@ -339,9 +509,9 @@ const KinsiDashboard = () => {
                     <Calendar className="w-5 h-5 text-orange-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold" style={{ color: '#3D2914' }}>{event.eventName}</p>
+                    <p className="font-semibold" style={{ color: '#3D2914' }}>{event.event_name}</p>
                     <p className="text-sm" style={{ color: '#7A5C38' }}>
-                      {event.eventType} • {new Date(event.date).toLocaleDateString()}
+                      {event.event_type} • {new Date(event.date).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -388,8 +558,8 @@ const KinsiDashboard = () => {
                     <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>First Name</label>
                     <input
                       type="text"
-                      value={currentData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      value={currentData.first_name}
+                      onChange={(e) => handleInputChange('first_name', e.target.value)}
                       className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
                       placeholder="Your first name"
                       style={{ color: '#3D2914' }}
@@ -399,8 +569,8 @@ const KinsiDashboard = () => {
                     <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Last Name</label>
                     <input
                       type="text"
-                      value={currentData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      value={currentData.last_name}
+                      onChange={(e) => handleInputChange('last_name', e.target.value)}
                       className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
                       placeholder="Your last name"
                       style={{ color: '#3D2914' }}
@@ -408,29 +578,16 @@ const KinsiDashboard = () => {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Email</label>
-                    <input
-                      type="email"
-                      value={currentData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
-                      placeholder="your.email@example.com"
-                      style={{ color: '#3D2914' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Phone</label>
-                    <input
-                      type="tel"
-                      value={currentData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
-                      placeholder="+254 123 456 789"
-                      style={{ color: '#3D2914' }}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Phone</label>
+                  <input
+                    type="tel"
+                    value={currentData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                    placeholder="+254 123 456 789"
+                    style={{ color: '#3D2914' }}
+                  />
                 </div>
 
                 <div>
@@ -459,9 +616,10 @@ const KinsiDashboard = () => {
 
                 <button 
                   onClick={saveProfile}
-                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save Profile
+                  {loading ? 'Saving...' : 'Save Profile'}
                 </button>
               </div>
             </div>
@@ -493,10 +651,11 @@ const KinsiDashboard = () => {
                 <>
                   <button 
                     onClick={saveProfile}
-                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+                    disabled={loading}
+                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
-                    Save
+                    {loading ? 'Saving...' : 'Save'}
                   </button>
                   <button 
                     onClick={cancelEditingProfile}
@@ -557,8 +716,8 @@ const KinsiDashboard = () => {
                       <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>First Name</label>
                       <input
                         type="text"
-                        value={currentData.firstName}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        value={currentData.first_name}
+                        onChange={(e) => handleInputChange('first_name', e.target.value)}
                         className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
                         style={{ color: '#3D2914' }}
                       />
@@ -567,35 +726,23 @@ const KinsiDashboard = () => {
                       <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Last Name</label>
                       <input
                         type="text"
-                        value={currentData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        value={currentData.last_name}
+                        onChange={(e) => handleInputChange('last_name', e.target.value)}
                         className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
                         style={{ color: '#3D2914' }}
                       />
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Email</label>
-                      <input
-                        type="email"
-                        value={currentData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
-                        style={{ color: '#3D2914' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Phone</label>
-                      <input
-                        type="tel"
-                        value={currentData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
-                        style={{ color: '#3D2914' }}
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Phone</label>
+                    <input
+                      type="tel"
+                      value={currentData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors text-lg"
+                      style={{ color: '#3D2914' }}
+                    />
                   </div>
 
                   <div>
@@ -628,61 +775,45 @@ const KinsiDashboard = () => {
                       <div className="flex justify-between items-start mb-2">
                         <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>First Name</label>
                         <button 
-                          onClick={() => deleteProfileField('firstName')}
+                          onClick={() => deleteProfileField('first_name')}
                           className="text-red-500 hover:text-red-700 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                       <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
-                        {profileData.firstName || 'Not provided'}
+                        {profileData.first_name || 'Not provided'}
                       </p>
                     </div>
                     <div className="bg-orange-50 p-4 rounded-2xl">
                       <div className="flex justify-between items-start mb-2">
                         <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Last Name</label>
                         <button 
-                          onClick={() => deleteProfileField('lastName')}
+                          onClick={() => deleteProfileField('last_name')}
                           className="text-red-500 hover:text-red-700 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                       <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
-                        {profileData.lastName || 'Not provided'}
+                        {profileData.last_name || 'Not provided'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-orange-50 p-4 rounded-2xl">
-                      <div className="flex justify-between items-start mb-2">
-                        <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Email</label>
-                        <button 
-                          onClick={() => deleteProfileField('email')}
-                          className="text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
-                        {profileData.email || 'Not provided'}
-                      </p>
+                  <div className="bg-orange-50 p-4 rounded-2xl">
+                    <div className="flex justify-between items-start mb-2">
+                      <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Phone</label>
+                      <button 
+                        onClick={() => deleteProfileField('phone')}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div className="bg-orange-50 p-4 rounded-2xl">
-                      <div className="flex justify-between items-start mb-2">
-                        <label className="block text-sm font-semibold" style={{ color: '#3D2914' }}>Phone</label>
-                        <button 
-                          onClick={() => deleteProfileField('phone')}
-                          className="text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
-                        {profileData.phone || 'Not provided'}
-                      </p>
-                    </div>
+                    <p className="text-lg font-medium" style={{ color: '#3D2914' }}>
+                      {profileData.phone || 'Not provided'}
+                    </p>
                   </div>
 
                   <div className="bg-orange-50 p-4 rounded-2xl">
@@ -755,7 +886,7 @@ const KinsiDashboard = () => {
           {savedEvents.map((event) => (
             <div key={event.id} className="bg-white rounded-3xl p-6 border-2 border-orange-100 hover:border-orange-200 transition-all duration-300 hover:transform hover:-translate-y-2">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-bold" style={{ color: '#3D2914' }}>{event.eventName}</h3>
+                <h3 className="text-xl font-bold" style={{ color: '#3D2914' }}>{event.event_name}</h3>
                 <button 
                   onClick={() => deleteEvent(event.id)}
                   className="text-red-500 hover:text-red-700 transition-colors p-2 rounded-lg hover:bg-red-50"
@@ -774,7 +905,7 @@ const KinsiDashboard = () => {
                   <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
                     <DollarSign className="w-3 h-3 text-orange-600" />
                   </div>
-                  <span style={{ color: '#7A5C38' }}>Budget: KSh {event.budget}</span>
+                  <span style={{ color: '#7A5C38' }}>Budget: KSh {Number(event.budget).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
@@ -888,10 +1019,10 @@ const KinsiDashboard = () => {
                   </div>
                   <div>
                     <h3 className="font-bold" style={{ color: '#3D2914' }}>
-                      {payment.type === 'card' ? 'Credit/Debit Card' : 'M-Pesa'}
+                      {payment.method_type === 'card' ? 'Credit/Debit Card' : 'M-Pesa'}
                     </h3>
                     <p className="text-sm" style={{ color: '#7A5C38' }}>
-                      Added {new Date(payment.createdAt).toLocaleDateString()}
+                      Added {new Date(payment.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -903,17 +1034,17 @@ const KinsiDashboard = () => {
                 </button>
               </div>
               
-              {payment.type === 'card' ? (
+              {payment.method_type === 'card' ? (
                 <div className="space-y-2">
-                  <p className="font-mono text-lg" style={{ color: '#3D2914' }}>{payment.cardNumber}</p>
+                  <p className="font-mono text-lg" style={{ color: '#3D2914' }}>{payment.card_number}</p>
                   <div className="flex justify-between">
-                    <span style={{ color: '#7A5C38' }}>{payment.cardName}</span>
-                    <span style={{ color: '#7A5C38' }}>Exp: {payment.expiryDate}</span>
+                    <span style={{ color: '#7A5C38' }}>{payment.card_name}</span>
+                    <span style={{ color: '#7A5C38' }}>Exp: {payment.expiry_date}</span>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <p className="font-mono text-lg" style={{ color: '#3D2914' }}>{payment.mpesaNumber}</p>
+                  <p className="font-mono text-lg" style={{ color: '#3D2914' }}>{payment.mpesa_number}</p>
                   <span style={{ color: '#7A5C38' }}>M-Pesa Mobile Money</span>
                 </div>
               )}
@@ -932,9 +1063,9 @@ const KinsiDashboard = () => {
                   <DollarSign className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="font-semibold" style={{ color: '#3D2914' }}>Deposit for {event.eventName}</p>
+                  <p className="font-semibold" style={{ color: '#3D2914' }}>Deposit for {event.event_name}</p>
                   <p className="text-sm" style={{ color: '#7A5C38' }}>
-                    {new Date(event.createdAt).toLocaleDateString()}
+                    {new Date(event.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -969,8 +1100,8 @@ const KinsiDashboard = () => {
               <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Event Name</label>
               <input
                 type="text"
-                value={eventFormData.eventName}
-                onChange={(e) => handleEventInputChange('eventName', e.target.value)}
+                value={eventFormData.event_name}
+                onChange={(e) => handleEventInputChange('event_name', e.target.value)}
                 className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
                 placeholder="e.g., Wedding, Birthday"
                 required
@@ -980,8 +1111,8 @@ const KinsiDashboard = () => {
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Event Type</label>
               <select
-                value={eventFormData.eventType}
-                onChange={(e) => handleEventInputChange('eventType', e.target.value)}
+                value={eventFormData.event_type}
+                onChange={(e) => handleEventInputChange('event_type', e.target.value)}
                 className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
                 required
                 style={{ color: '#3D2914' }}
@@ -1050,9 +1181,10 @@ const KinsiDashboard = () => {
 
           <button 
             type="submit"
-            className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Event
+            {loading ? 'Creating...' : 'Create Event'}
           </button>
         </form>
       </div>
@@ -1101,8 +1233,8 @@ const KinsiDashboard = () => {
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Card Number</label>
                 <input
                   type="text"
-                  value={paymentFormData.cardNumber}
-                  onChange={(e) => handlePaymentInputChange('cardNumber', e.target.value)}
+                  value={paymentFormData.card_number}
+                  onChange={(e) => handlePaymentInputChange('card_number', e.target.value)}
                   className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
                   placeholder="1234 5678 9012 3456"
                   required
@@ -1115,8 +1247,8 @@ const KinsiDashboard = () => {
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Expiry Date</label>
                   <input
                     type="text"
-                    value={paymentFormData.expiryDate}
-                    onChange={(e) => handlePaymentInputChange('expiryDate', e.target.value)}
+                    value={paymentFormData.expiry_date}
+                    onChange={(e) => handlePaymentInputChange('expiry_date', e.target.value)}
                     className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
                     placeholder="MM/YY"
                     required
@@ -1139,8 +1271,8 @@ const KinsiDashboard = () => {
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Card Name</label>
                   <input
                     type="text"
-                    value={paymentFormData.cardName}
-                    onChange={(e) => handlePaymentInputChange('cardName', e.target.value)}
+                    value={paymentFormData.card_name}
+                    onChange={(e) => handlePaymentInputChange('card_name', e.target.value)}
                     className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
                     placeholder="John Doe"
                     required
@@ -1154,10 +1286,10 @@ const KinsiDashboard = () => {
               <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>M-Pesa Phone Number</label>
               <input
                 type="tel"
-                value={paymentFormData.mpesaNumber}
-                onChange={(e) => handlePaymentInputChange('mpesaNumber', e.target.value)}
+                value={paymentFormData.mpesa_number}
+                onChange={(e) => handlePaymentInputChange('mpesa_number', e.target.value)}
                 className="w-full p-4 rounded-2xl border-2 border-orange-100 focus:border-orange-300 focus:outline-none transition-colors"
-                placeholder="07XX XXX XXX"
+                placeholder="2547XX XXX XXX"
                 required
                 style={{ color: '#3D2914' }}
               />
@@ -1169,18 +1301,30 @@ const KinsiDashboard = () => {
 
           <button 
             type="submit"
-            className={`w-full text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl ${
+            disabled={loading}
+            className={`w-full text-white py-4 rounded-2xl font-bold text-lg hover:transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
               paymentMethod === 'card' 
                 ? 'bg-gradient-to-r from-orange-600 to-orange-700' 
                 : 'bg-gradient-to-r from-green-600 to-green-700'
             }`}
           >
-            Add Payment Method
+            {loading ? 'Adding...' : 'Add Payment Method'}
           </button>
         </form>
       </div>
     </div>
   );
+
+  if (loading && !error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-semibold" style={{ color: '#3D2914' }}>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">

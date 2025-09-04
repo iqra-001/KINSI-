@@ -13,7 +13,7 @@ const LocalVendorsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'http://localhost:5555/api/vendor';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,7 +31,7 @@ const LocalVendorsPage = () => {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/vendors`);
+      const response = await fetch(`${API_BASE_URL}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch vendors');

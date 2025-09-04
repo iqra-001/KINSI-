@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 import os
-
+from routes import all_routes
 # Loading environment variables.
 load_dotenv()
 
@@ -37,6 +37,10 @@ CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_
 # ==================== Register Routes ====================
 from models import * 
 from routes import all_routes
+from models import User, Service, Vendor, TokenBlocklist
+from models.user_profile import UserProfile
+from models.user_event import UserEvent
+from models.user_payment import UserPaymentMethod
 
 # ==================== JWT Token Blocklist ====================
 from models.tokenblocklist import TokenBlocklist
@@ -50,10 +54,18 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 def revoked_token_callback(jwt_header, jwt_payload):
     return jsonify({"error": "Token has been revoked. Please log in again."}), 401
 
+# Import and register the new user dashboard blueprint with a unique name
+try:
+    from routes.user_dashboard import user_dashboard_bp
+    # Register the user dashboard blueprint with a specific prefix and unique name
+    app.register_blueprint(user_dashboard_bp, url_prefix='/api/user-dashboard', name='user_dashboard_api')
+except ImportError:
+    print("User dashboard routes not available yet")
+
+# Register all blueprints from the all_routes list
 for bp in all_routes:
     app.register_blueprint(bp, url_prefix='/api')
 
 # ==================== Run the App ====================
 if __name__ == "__main__":
     app.run(port=5555, debug=True)
-    

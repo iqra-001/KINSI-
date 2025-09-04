@@ -43,7 +43,7 @@ def create_or_update_vendor_profile():
             # Update existing vendor
             existing_vendor.business_name = data.get('business_name', existing_vendor.business_name)
             existing_vendor.owner_name = data.get('owner_name', existing_vendor.owner_name)
-            existing_vendor.email = data.get('email', existing_vendor.email)
+            existing_vendor.email = data.get('business_email', existing_vendor.email)
             existing_vendor.service_type = data.get('service_type', existing_vendor.service_type)
             existing_vendor.description = data.get('description', existing_vendor.description)
             existing_vendor.contact_phone = data.get('contact_phone', existing_vendor.contact_phone)
@@ -67,7 +67,7 @@ def create_or_update_vendor_profile():
                 user_id=user_id,
                 business_name=data.get('business_name', ''),
                 owner_name=data.get('owner_name', ''),
-                email=data.get('email', ''),
+                business_email=data.get('email', ''),
                 service_type=data.get('service_type', ''),
                 description=data.get('description', ''),
                 contact_phone=data.get('contact_phone', ''),
@@ -93,12 +93,20 @@ def create_or_update_vendor_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Database error: {str(e)}"}), 500
+@vendor_bp.route('/vendor', methods=['GET'])
+def get_all_vendors():
+    """Fetch all vendors"""
+    try:
+        vendors = Vendor.query.all()
+        return jsonify([vendor.to_dict() for vendor in vendors]), 200
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 @vendor_bp.route('/vendor/stats/<int:vendor_id>', methods=['GET'])
 def get_vendor_stats(vendor_id):
     """Get vendor statistics"""
     try:
-        from app.models.services import Service
+        from models.services import Service
         
         vendor = Vendor.query.get(vendor_id)
         if not vendor:
