@@ -1,29 +1,40 @@
 import React, { useState } from "react";
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, User, Mail, Lock, ArrowLeft, Sparkles, ChevronRight, Briefcase } from "lucide-react";
-import KinsiLandingPage from "./Landing";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Lock,
+  ArrowLeft,
+  Sparkles,
+  ChevronRight,
+  Briefcase,
+} from "lucide-react";
 import KinsiDashboard from "./UserDashBoard";
-import VendorDashboard from "./VendorDashBoard"; // You'll need to create this
-import GoogleBtn from "./GoogleBtn";
-import '../index.css'
+import VendorDashboard from "./VendorDashBoard";
 import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../contexts/AuthContext"; // ✅ to update context
 
 function ModernSignup() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
   const [userRole, setUserRole] = useState("user"); // Default role
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
-    role: "user" // Default role
+    role: "user",
   });
+  const [loading, setLoading] = useState(false);
+
+  const { setCurrentUser } = useAuth();
+  const navigate = useNavigate();
 
   // Handle input changes
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -32,91 +43,117 @@ function ModernSignup() {
     setUserRole(role);
     setFormData({
       ...formData,
-      role: role
+      role: role,
     });
   };
 
-  // Modified handleSubmit function
-  const handleSubmit = (e) => {
+  // Submit signup to backend
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password) {
+
+    if (!formData.username || !formData.email || !formData.password) {
       alert("Please fill in all fields");
       return;
     }
 
-    console.log("Form submitted:", formData);
-    
-    // Here you would typically:
-    // 1. Send data to your backend API
-    // 2. Handle authentication tokens
-    // 3. Store user session
-    // 4. Handle any errors
-    
-    // For now, we'll simulate successful signup
-    alert(`Signup successful! Welcome to KINSI as a ${formData.role}!`);
-    
-    // Redirect to dashboard based on role
-    setShowDashboard(true);
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5555/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Signup failed");
+        return;
+      }
+
+      const data = await res.json();
+      alert("Signup successful! 🎉");
+
+      // Save user info locally
+      localStorage.setItem("role", data.user.role);
+      localStorage.setItem("user_id", data.user.id);
+      localStorage.setItem("username", data.user.username);
+
+      // Update AuthContext
+      setCurrentUser({
+        role: data.user.role,
+        userId: data.user.id,
+        username: data.user.username,
+      });
+
+      // Redirect based on role
+      if (data.user.role === "user") {
+        navigate("/userdashboard");
+      } else if (data.user.role === "vendor") {
+        navigate("/vendorpage");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      alert("Server error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle Google OAuth success
-  const handleGoogleSuccess = (credentialResponse) => {
-    console.log("Google OAuth Success:", credentialResponse);
-    
-    // Here you would typically:
-    // 1. Send the credential to your backend
-    // 2. Decode the JWT token to get user info
-    // 3. Create user session
-    // 4. Redirect to dashboard
-    
-    // For now, simulate successful Google signup
-    const userData = {
-      name: "Google User", // You'd decode this from the JWT
-      email: "user@gmail.com", // You'd decode this from the JWT
-      role: userRole
-    };
-    
-    setFormData(userData);
-    alert(`Google signup successful! Welcome to KINSI as a ${userRole}!`);
-    setShowDashboard(true);
+  // Handle Google signup
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const token = credentialResponse.credential;
+      if (!token) {
+        alert("Google signup failed. Try again.");
+        return;
+      }
+
+      const res = await fetch("http://localhost:5555/api/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Google signup failed");
+        return;
+      }
+
+      const data = await res.json();
+
+      // Save token & user info
+      localStorage.setItem("accessToken", data.access_token);
+      localStorage.setItem("role", data.user.role);
+      localStorage.setItem("user_id", data.user.id);
+      localStorage.setItem("username", data.user.username);
+
+      setCurrentUser({
+        role: data.user.role,
+        userId: data.user.id,
+        username: data.user.username,
+      });
+
+      alert("Google signup successful! 🎉");
+
+      if (data.user.role === "user") {
+        navigate("/userdashboard");
+      } else if (data.user.role === "vendor") {
+        navigate("/vendorpage");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Google signup error:", err);
+      alert("Google signup failed. Please try again.");
+    }
   };
 
-  // Handle Google OAuth error
   const handleGoogleError = () => {
-    console.log("Google login failed");
     alert("Google signup failed. Please try again.");
   };
-
-  const handleLogout = () => {
-    setShowDashboard(false);
-    // Clear form data on logout
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      role: "user"
-    });
-    setUserRole("user");
-  };
-
-  const navigateHome = () => {
-    setShowDashboard(false);
-  };
-
-  const navigateLogin = () => {
-    console.log("Navigate to login");
-  };
-
-  // Render appropriate dashboard based on role
-  if (showDashboard) {
-    if (formData.role === "vendor") {
-      return <VendorDashboard onLogout={handleLogout} userData={formData} />;
-    } else {
-      return <KinsiDashboard onLogout={handleLogout} userData={formData} />;
-    }
-  }
 
   return (
     <div 
@@ -133,7 +170,7 @@ function ModernSignup() {
 
       {/* Back Button */}
       <button
-        onClick={navigateHome}
+        onClick={() => navigate("/")}
         className="absolute top-8 left-8 flex items-center gap-2 text-amber-900 hover:text-orange-500 transition-colors duration-300 font-medium z-20 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg"
       >
         <ArrowLeft className="w-5 h-5" />
@@ -341,7 +378,7 @@ function ModernSignup() {
               </div>
               <input
                 type="text"
-                name="name"
+                name="username"
                 placeholder="Full Name"
                 value={formData.name}
                 onChange={handleChange}

@@ -16,6 +16,8 @@ werkzeug = "*"
 python-dotenv = "*"
 gunicorn = "*"
 flask-jwt-extended = "*"
+google-auth = "*"
+requests = "*"
 
 [dev-packages]
 
