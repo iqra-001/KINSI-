@@ -12,6 +12,7 @@ import VisionsPage from "./Components/VisionsPage";
 import VendorDashboard from "./Components/VendorDashBoard";
 import ModernLogin from "./Components/LogIn";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import LogoutButton from "./Components/LogOutButton";
 
 // Optional Unauthorized page
 const Unauthorized = () => (
@@ -30,7 +31,7 @@ function App() {
       <Route path="/aboutus" element={<AboutUsPage />} />
       <Route path="/visionspage" element={<VisionsPage />} />
       <Route path="/localvendors" element={<LocalVendorsPage />} />
-      
+      <Route path= "/logout" element = {<LogoutButton/>}/>
       {/* Unauthorized Fallback */}
       <Route path="/unauthorized" element={<Unauthorized />} />
 

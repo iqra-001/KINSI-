@@ -23,7 +23,7 @@ class Vendor(BaseModel):
 
     # Relationships
     services = db.relationship("Service", backref="vendor", lazy=True, cascade="all, delete-orphan")
-
+    
     def to_dict(self):
         return {
             "id": self.id,

@@ -30,130 +30,131 @@ function ModernSignup() {
   const { setCurrentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Handle input changes
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+ // Handle input changes
+ const handleChange = (e) => {
+  setFormData({
+    ...formData,
+    [e.target.name]: e.target.value,
+  });
+};
+
+// Handle role selection
+const handleRoleChange = (role) => {
+  setUserRole(role);
+  setFormData({
+    ...formData,
+    role: role,
+  });
+};
+
+// Submit signup to backend
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!formData.username || !formData.email || !formData.password) {
+    alert("Please fill in all fields");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const res = await fetch("http://localhost:5555/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
     });
-  };
 
-  // Handle role selection
-  const handleRoleChange = (role) => {
-    setUserRole(role);
-    setFormData({
-      ...formData,
-      role: role,
-    });
-  };
-
-  // Submit signup to backend
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.username || !formData.email || !formData.password) {
-      alert("Please fill in all fields");
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.error || "Signup failed");
       return;
     }
 
-    try {
-      setLoading(true);
-      const res = await fetch("http://localhost:5555/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+    const data = await res.json();
+    alert("Signup successful! 🎉");
 
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Signup failed");
-        return;
-      }
+    // Save token & user info
+    localStorage.setItem("accessToken", data.access_token); // <--- IMPORTANT
+    localStorage.setItem("role", data.user.role);
+    localStorage.setItem("user_id", data.user.id);
+    localStorage.setItem("username", data.user.username);
 
-      const data = await res.json();
-      alert("Signup successful! 🎉");
+    // Update AuthContext
+    setCurrentUser({
+      role: data.user.role,
+      userId: data.user.id,
+      username: data.user.username,
+    });
 
-      // Save user info locally
-      localStorage.setItem("role", data.user.role);
-      localStorage.setItem("user_id", data.user.id);
-      localStorage.setItem("username", data.user.username);
-
-      // Update AuthContext
-      setCurrentUser({
-        role: data.user.role,
-        userId: data.user.id,
-        username: data.user.username,
-      });
-
-      // Redirect based on role
-      if (data.user.role === "user") {
-        navigate("/userdashboard");
-      } else if (data.user.role === "vendor") {
-        navigate("/vendorpage");
-      } else {
-        navigate("/");
-      }
-    } catch (err) {
-      console.error("Signup error:", err);
-      alert("Server error. Please try again.");
-    } finally {
-      setLoading(false);
+    // Redirect based on role
+    if (data.user.role === "user") {
+      navigate("/userdashboard");
+    } else if (data.user.role === "vendor") {
+      navigate("/vendorpage");
+    } else {
+      navigate("/");
     }
-  };
+  } catch (err) {
+    console.error("Signup error:", err);
+    alert("Server error. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  // Handle Google signup
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const token = credentialResponse.credential;
-      if (!token) {
-        alert("Google signup failed. Try again.");
-        return;
-      }
-
-      const res = await fetch("http://localhost:5555/api/google-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Google signup failed");
-        return;
-      }
-
-      const data = await res.json();
-
-      // Save token & user info
-      localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("role", data.user.role);
-      localStorage.setItem("user_id", data.user.id);
-      localStorage.setItem("username", data.user.username);
-
-      setCurrentUser({
-        role: data.user.role,
-        userId: data.user.id,
-        username: data.user.username,
-      });
-
-      alert("Google signup successful! 🎉");
-
-      if (data.user.role === "user") {
-        navigate("/userdashboard");
-      } else if (data.user.role === "vendor") {
-        navigate("/vendorpage");
-      } else {
-        navigate("/");
-      }
-    } catch (err) {
-      console.error("Google signup error:", err);
-      alert("Google signup failed. Please try again.");
+// Handle Google signup
+const handleGoogleSuccess = async (credentialResponse) => {
+  try {
+    const token = credentialResponse.credential;
+    if (!token) {
+      alert("Google signup failed. Try again.");
+      return;
     }
-  };
 
-  const handleGoogleError = () => {
+    const res = await fetch("http://localhost:5555/api/google-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.error || "Google signup failed");
+      return;
+    }
+
+    const data = await res.json();
+
+    // Save token & user info
+    localStorage.setItem("accessToken", data.access_token);
+    localStorage.setItem("role", data.user.role);
+    localStorage.setItem("user_id", data.user.id);
+    localStorage.setItem("username", data.user.username);
+
+    setCurrentUser({
+      role: data.user.role,
+      userId: data.user.id,
+      username: data.user.username,
+    });
+
+    alert("Google signup successful! 🎉");
+
+    if (data.user.role === "user") {
+      navigate("/userdashboard");
+    } else if (data.user.role === "vendor") {
+      navigate("/vendorpage");
+    } else {
+      navigate("/");
+    }
+  } catch (err) {
+    console.error("Google signup error:", err);
     alert("Google signup failed. Please try again.");
-  };
+  }
+};
+
+const handleGoogleError = () => {
+  alert("Google signup failed. Please try again.");
+};
 
   return (
     <div 

@@ -14,6 +14,8 @@ class User(BaseModel):
 
     # Relationships
     vendor = db.relationship("Vendor", backref="user", uselist=False, cascade="all, delete-orphan")
+    profile = db.relationship('UserProfile', backref='user', uselist=False)
+
 
     # Password methods
     def set_password(self, password):

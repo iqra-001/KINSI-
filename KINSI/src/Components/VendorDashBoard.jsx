@@ -8,7 +8,9 @@ import {
   ImageIcon, Trash2, Edit, AlertCircle, Sparkles,
   ShoppingBag, Target, Zap, Briefcase, Loader
 } from 'lucide-react';
-
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import LogoutButton from './LogOutButton';
 const VendorDashboard = () => {
   // State management
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -65,27 +67,30 @@ const VendorDashboard = () => {
   // API utility functions
   const apiCall = async (endpoint, options = {}) => {
     try {
+      const token = sessionStorage.getItem("access_token"); // or localStorage
+  
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}), // attach token if it exists
           ...options.headers
         },
         ...options
       });
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
-        throw new Error(data.error || 'API call failed');
+        throw new Error(data.error || "API call failed");
       }
-
+  
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error("API Error:", error);
       throw error;
     }
   };
-
+  
   // Load vendor profile and data on component mount
   useEffect(() => {
     loadVendorData();
@@ -97,7 +102,7 @@ const VendorDashboard = () => {
     setLoading(true);
     try {
       // Load vendor profile
-      const vendorData = await apiCall(`/vendor/profile/${currentUserId}`);
+      const vendorData = await apiCall(`/vendor/profile`);
       if (vendorData) {
         setVendorId(vendorData.id);
         setVendorProfile({
@@ -289,8 +294,22 @@ const VendorDashboard = () => {
   };
 
   const handleLogout = () => {
-    console.log('Vendor logged out');
-    // Implement logout logic
+    const navigate = useNavigate();
+    const { setCurrentUser } = useAuth();
+  
+    console.log("Vendor logged out");
+  
+    // 1️⃣ Clear all auth-related data
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("username");
+  
+    // 2️⃣ Reset context
+    setCurrentUser(null);
+  
+    // 3️⃣ Redirect to sign-in page
+    navigate("/signin");
   };
 
   const addFeature = () => {
@@ -1138,13 +1157,7 @@ const VendorDashboard = () => {
                 </button>
                 {showNotificationPanel && renderNotificationPanel()}
               </div>
-              <button 
-                className="p-2 rounded-full hover:bg-orange-100 transition-colors"
-                onClick={handleLogout}
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" style={{ color: '#7A5C38' }} />
-              </button>
+              <LogoutButton onClick={handleLogout} />
               <button 
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-200"
                 onClick={() => setActiveSection('profile')}

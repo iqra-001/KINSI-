@@ -138,6 +138,16 @@ def logout():
 def me():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+
     if not user:
         return jsonify({"error": "User not found"}), 404
-    return jsonify(user.to_dict()), 200
+
+    # Fetch related profile & vendor
+    profile = UserProfile.query.filter_by(user_id=user.id).first()
+    vendor = Vendor.query.filter_by(user_id=user.id).first()
+
+    return jsonify({
+        "user": user.to_dict(),
+        "profile": profile.to_dict() if profile else None,
+        "vendor": vendor.to_dict() if vendor else None
+    }), 200

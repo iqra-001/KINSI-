@@ -6,6 +6,7 @@ import {
   CheckCircle, Clock, DollarSign, Package, LogOut, X,
   Save, Trash2, Edit, AlertCircle, Filter, MessageCircle
 } from 'lucide-react';
+import LogoutButton from './LogOutButton';
 
 const KinsiDashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
@@ -77,12 +78,18 @@ const KinsiDashboard = () => {
   // API Configuration
   const API_BASE_URL = 'http://localhost:5555/api'; // Adjust to your backend URL
   const getAuthHeaders = () => {
-    const token = sessionStorage.getItem('access_token');
+    const token = sessionStorage.getItem("access_token");
+    if (token) {
+      return {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+    }
     return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     };
   };
+  
 
   // API Functions
   const apiCall = async (endpoint, options = {}) => {
@@ -421,13 +428,13 @@ const KinsiDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      sessionStorage.removeItem('access_token');
-      // Redirect to login page or reload
-      window.location.href = '/login';
-    }
-  };
+  // const handleLogout = () => {
+  //   if (window.confirm('Are you sure you want to logout?')) {
+  //     sessionStorage.removeItem('access_token');
+  //     // Redirect to login page or reload
+  //     navigate('/signin');
+  //   }
+  // };
 
   // New: Handle vendor selection
   const handleViewVendor = async (vendor) => {
@@ -1453,13 +1460,8 @@ const KinsiDashboard = () => {
             <button className="p-2 rounded-xl hover:bg-orange-50 transition-colors">
               <Settings className="w-6 h-6" style={{ color: '#7A5C38' }} />
             </button>
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-xl font-semibold hover:bg-orange-200 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+            <LogoutButton />
+
           </div>
         </div>
       </header>
