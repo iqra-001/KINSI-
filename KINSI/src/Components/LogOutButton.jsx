@@ -10,19 +10,24 @@ const LogoutButton = () => {
         const token = sessionStorage.getItem("access_token");
 
         if (token) {
-          await fetch("http://localhost:5555/api/logout", {
+          const response = await fetch("http://localhost:5555/api/logout", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
           });
+
+          if (!response.ok) {
+            console.warn("Backend logout failed:", await response.json());
+          }
         }
 
+        // Always clear local token (even if backend logout fails/expired)
         sessionStorage.removeItem("access_token");
         navigate("/signin");
       } catch (error) {
-        console.error("Logout failed:", error);
+        console.error("Logout request error:", error);
         sessionStorage.removeItem("access_token");
         navigate("/signin");
       }

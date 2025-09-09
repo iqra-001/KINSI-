@@ -22,6 +22,7 @@ class Vendor(BaseModel):
     total_reviews = db.Column(db.Integer, default=0)
 
     # Relationships
+    user = db.relationship("User", back_populates="vendor")
     services = db.relationship("Service", backref="vendor", lazy=True, cascade="all, delete-orphan")
     
     def to_dict(self):

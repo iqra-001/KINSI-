@@ -428,14 +428,6 @@ const KinsiDashboard = () => {
     }
   };
 
-  // const handleLogout = () => {
-  //   if (window.confirm('Are you sure you want to logout?')) {
-  //     sessionStorage.removeItem('access_token');
-  //     // Redirect to login page or reload
-  //     navigate('/signin');
-  //   }
-  // };
-
   // New: Handle vendor selection
   const handleViewVendor = async (vendor) => {
     setSelectedVendor(vendor);

@@ -6,6 +6,8 @@ from flask_jwt_extended import (
     get_jwt
 )
 from models.user import User
+from models.vendors import Vendor
+from models.user_profile import UserProfile
 from models.tokenblocklist import TokenBlocklist
 from db.KINSI import db
 from datetime import datetime
@@ -31,35 +33,66 @@ def register():
     if not data or not data.get("username") or not data.get("email") or not data.get("password"):
         return jsonify({"error": "Username, email, and password are required"}), 400
 
-    # 🔥 Run validators
     errors = validate_user_data(data)
     if errors:
         return jsonify({"errors": errors}), 400
 
-    # Check if email already exists
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "Email already registered"}), 400
 
-    # Check if username already exists
     if User.query.filter_by(username=data["username"]).first():
         return jsonify({"error": "Username already taken"}), 400
 
-    # Create new user
+    role = data.get("role", "user")
+
+    # Create base User
     user = User(
         username=data["username"].strip(),
         email=data["email"].strip(),
-        role=data.get("role", "user")  # default role is "user"
+        role=role
     )
     user.set_password(data["password"])
-
     db.session.add(user)
+    db.session.flush()  # get user.id
+
+    # Create extra table depending on role
+    if role == "vendor":
+        vendor = Vendor(
+            user_id=user.id,
+            business_name=data.get("business_name", ""),
+            owner_name=data.get("owner_name", ""),
+            business_email=data.get("business_email", ""),
+            service_type=data.get("service_type", ""),
+            description=data.get("description", ""),
+            contact_phone=data.get("contact_phone", ""),
+            address=data.get("address", ""),
+            experience=data.get("experience", ""),
+            website=data.get("website", ""),
+            instagram=data.get("instagram", ""),
+            facebook=data.get("facebook", ""),
+            twitter=data.get("twitter", "")
+        )
+        db.session.add(vendor)
+    else:  # Normal user
+        profile = UserProfile(
+            user_id=user.id,
+            first_name=data.get("first_name", ""),
+            last_name=data.get("last_name", ""),
+            phone=data.get("phone", ""),
+            location=data.get("location", ""),
+            bio=data.get("bio", ""),
+            profile_image=data.get("profile_image", "")
+        )
+        db.session.add(profile)
+
     db.session.commit()
 
     return jsonify({
         "message": "User registered successfully",
-        "user": user.to_dict()
+        "user": user.to_dict(),
+        "vendor": user.vendor.to_dict() if user.vendor else None,
+        "profile": user.profile.to_dict() if user.profile else None
     }), 201
-
 
 # ==================== Login ====================
 @auth_bp.route('/login', methods=['POST'])

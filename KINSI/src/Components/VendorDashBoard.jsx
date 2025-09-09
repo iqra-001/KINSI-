@@ -293,25 +293,6 @@ const VendorDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    const navigate = useNavigate();
-    const { setCurrentUser } = useAuth();
-  
-    console.log("Vendor logged out");
-  
-    // 1️⃣ Clear all auth-related data
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("username");
-  
-    // 2️⃣ Reset context
-    setCurrentUser(null);
-  
-    // 3️⃣ Redirect to sign-in page
-    navigate("/signin");
-  };
-
   const addFeature = () => {
     setServiceFormData(prev => ({
       ...prev,
@@ -1157,8 +1138,8 @@ const VendorDashboard = () => {
                 </button>
                 {showNotificationPanel && renderNotificationPanel()}
               </div>
-              <LogoutButton onClick={handleLogout} />
-              <button 
+              <LogoutButton />
+              <button
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-200"
                 onClick={() => setActiveSection('profile')}
               >

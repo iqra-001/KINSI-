@@ -13,9 +13,8 @@ class User(BaseModel):
     role = db.Column(db.String(20), default="user")
 
     # Relationships
-    vendor = db.relationship("Vendor", backref="user", uselist=False, cascade="all, delete-orphan")
-    profile = db.relationship('UserProfile', backref='user', uselist=False)
-
+    vendor = db.relationship("Vendor", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    profile = db.relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     # Password methods
     def set_password(self, password):
