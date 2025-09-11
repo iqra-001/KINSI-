@@ -7,6 +7,8 @@ import {
   Save, Trash2, Edit, AlertCircle, Filter, MessageCircle
 } from 'lucide-react';
 import LogoutButton from './LogOutButton';
+import VendorSelector from "./VendorSelector";
+import { useAuth } from '../contexts/AuthContext';
 
 const KinsiDashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
@@ -18,6 +20,13 @@ const KinsiDashboard = () => {
   const [profileSaved, setProfileSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showVendorSelect, setShowVendorSelect] = useState(false);
+  const [availableVendors, setAvailableVendors] = useState([]);
+  const [selectedVendors, setSelectedVendors] = useState([]);
+  const [currentVendorType, setCurrentVendorType] = useState(null);
+
+
+  const { currentUser, tokenVerified } = useAuth();
   
   // Profile data with saved state
   const [profileData, setProfileData] = useState({
@@ -78,7 +87,7 @@ const KinsiDashboard = () => {
   // API Configuration
   const API_BASE_URL = 'http://localhost:5555/api'; // Adjust to your backend URL
   const getAuthHeaders = () => {
-    const token = sessionStorage.getItem("access_token");
+    const token = localStorage.getItem("accessToken");
     if (token) {
       return {
         "Authorization": `Bearer ${token}`,
@@ -103,6 +112,12 @@ const KinsiDashboard = () => {
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token is invalid, redirect to login
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+          return;
+        }
         throw new Error(`API Error: ${response.statusText}`);
       }
       
@@ -114,12 +129,21 @@ const KinsiDashboard = () => {
     }
   };
 
-  // Load data on component mount
+  // Load data only after token is verified
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    if (tokenVerified && currentUser) {
+      loadDashboardData();
+    }
+  }, [tokenVerified, currentUser]);
 
   const loadDashboardData = async () => {
+    // Check if we have a valid token
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+    
     setLoading(true);
     try {
       // Load all dashboard data
@@ -128,10 +152,13 @@ const KinsiDashboard = () => {
         loadEvents(),
         loadPaymentMethods(),
         loadDashboardOverview(),
-        loadVendors() // New: load vendors
+        loadVendors()
       ]);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      if (error.message.includes('401')) {
+        window.location.href = "/login";
+      }
     } finally {
       setLoading(false);
     }
@@ -361,6 +388,18 @@ const KinsiDashboard = () => {
     }
   };
 
+  const fetchVendorsByType = async (type) => {
+  try {
+    const response = await apiCall(`/vendors?type=${encodeURIComponent(type)}`);
+    setAvailableVendors(response.vendors || []);
+    setCurrentVendorType(type);
+    setShowVendorSelect(true); // open modal
+  } catch (error) {
+    console.error(`Failed to fetch vendors for ${type}:`, error);
+  }
+};
+
+
   const deleteEvent = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
@@ -469,6 +508,35 @@ const KinsiDashboard = () => {
 
   const renderOverview = () => {
     const userName = profileData.first_name || 'Creative';
+
+  // Render loading state if token is not yet verified
+  if (!tokenVerified) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-semibold" style={{ color: '#3D2914' }}>Verifying your session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render login redirect if no user
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold mb-4" style={{ color: '#3D2914' }}>Please log in to access your dashboard</p>
+          <button 
+            onClick={() => window.location.href = "/login"}
+            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-2xl font-bold"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
     
     return (
       <div className="space-y-8">
@@ -1267,24 +1335,80 @@ const KinsiDashboard = () => {
             />
           </div>
 
-          {/* New: Vendor Types Needed */}
-          <div>
-            <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Vendor Types Needed</label>
-            <div className="grid md:grid-cols-3 gap-2">
-              {['Photography', 'Catering', 'Decoration', 'Venue', 'Music & Entertainment', 'Event Planning', 'Flowers', 'Transportation'].map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => toggleVendorType(type)}
-                  className={`p-2 rounded-xl font-semibold transition-colors ${
-                    eventFormData.vendor_types.includes(type) ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-800'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Vendor Types Needed */}
+<div>
+  <label className="block text-sm font-semibold mb-2" style={{ color: '#3D2914' }}>Vendor Types Needed</label>
+  <div className="grid md:grid-cols-3 gap-2">
+    {['Photography', 'Catering', 'Decoration', 'Venue', 'Music & Entertainment', 'Event Planning', 'Flowers', 'Transportation'].map((type) => (
+      <button
+        key={type}
+        type="button"
+        onClick={() => fetchVendorsByType(type)}   // 👈 change here
+        className={`p-2 rounded-xl font-semibold transition-colors ${
+          eventFormData.vendor_types.includes(type) ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-800'
+        }`}
+      >
+        {type}
+      </button>
+    ))}
+  </div>
+</div>
+
+{showVendorSelect && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-3xl p-8 max-w-lg w-full max-h-[80vh] overflow-y-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Select {currentVendorType}</h2>
+        <button onClick={() => setShowVendorSelect(false)}>
+          <X className="w-6 h-6 text-gray-600" />
+        </button>
+      </div>
+
+      {availableVendors.length === 0 ? (
+        <p>No vendors available for this category</p>
+      ) : (
+        <div className="space-y-3">
+          {availableVendors.map((vendor) => (
+            <label key={vendor.id} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selectedVendors.some((v) => v.id === vendor.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedVendors([...selectedVendors, vendor]);
+                  } else {
+                    setSelectedVendors(selectedVendors.filter((v) => v.id !== vendor.id));
+                  }
+                }}
+              />
+              <span>{vendor.business_name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={() => {
+          setEventFormData((prev) => ({
+            ...prev,
+            vendors: [
+  ...new Map(
+    [...(prev.vendors || []), ...selectedVendors].map(v => [v.id, v])
+  ).values()
+]
+, // save vendors
+            vendor_types: [...new Set([...(prev.vendor_types || []), currentVendorType])] // keep track of types
+          }));
+          setShowVendorSelect(false);
+        }}
+        className="mt-4 w-full bg-orange-600 text-white py-2 rounded-xl font-bold hover:bg-orange-700"
+      >
+        Save Selection
+      </button>
+    </div>
+  </div>
+)}
+
 
           <button 
             type="submit"

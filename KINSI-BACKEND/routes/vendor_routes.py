@@ -162,3 +162,25 @@ def get_vendor_stats(vendor_id):
 
     except Exception as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
+
+
+# -------------------------------
+# GET vendors by type (public)
+# -------------------------------
+@vendor_bp.route('/vendors', methods=['GET'])
+def get_vendors_by_type():
+    """Fetch vendors filtered by service_type"""
+    try:
+        vendor_type = request.args.get('type')  # e.g. Photography
+        if not vendor_type:
+            return jsonify({"error": "Missing vendor type"}), 400
+
+        vendors = Vendor.query.filter(
+            Vendor.service_type.ilike(f"%{vendor_type}%"),
+            Vendor.is_active == True
+        ).all()
+
+        return jsonify({"vendors": [vendor.to_dict() for vendor in vendors]}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500

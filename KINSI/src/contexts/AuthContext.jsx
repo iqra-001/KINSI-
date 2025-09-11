@@ -5,20 +5,36 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tokenVerified, setTokenVerified] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
+    const storedRole = localStorage.getItem("role");
+    const storedUserId = localStorage.getItem("user_id");
+    const storedUsername = localStorage.getItem("username");
 
+    // If no token, skip the API call
     if (!token) {
       setLoading(false);
+      setTokenVerified(true);
       return;
     }
 
-    // Fetch current user from backend
+    // Set user from localStorage immediately for initial render
+    if (storedRole && storedUserId && storedUsername) {
+      setCurrentUser({
+        role: storedRole,
+        userId: storedUserId,
+        username: storedUsername,
+      });
+    }
+
+    // Then verify with the backend
     fetch("http://localhost:5555/api/me", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     })
       .then(async (res) => {
@@ -29,11 +45,11 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem("user_id");
           localStorage.removeItem("username");
           setCurrentUser(null);
-          return;
+          throw new Error("Token invalid");
         }
         const data = await res.json();
 
-        // Store in state + localStorage (so ProtectedRoute can read role quickly)
+        // Store in state + localStorage
         setCurrentUser({
           role: data.role,
           userId: data.id,
@@ -47,7 +63,10 @@ export const AuthProvider = ({ children }) => {
         console.error("Error fetching current user:", err);
         setCurrentUser(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setTokenVerified(true);
+      });
   }, []);
 
   const logout = () => {
@@ -69,12 +88,14 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  }
-
   return (
-    <AuthContext.Provider value={{ currentUser, setCurrentUser, logout }}>
+    <AuthContext.Provider value={{ 
+      currentUser, 
+      setCurrentUser, 
+      logout, 
+      loading,
+      tokenVerified 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -161,7 +161,7 @@ function ModernLogin() {
 
       {/* Back Button */}
       <button
-        onClick={navigateHome}
+        onClick={() => navigate("/")}
         className="absolute top-8 left-8 flex items-center gap-2 text-amber-900 hover:text-orange-500 transition-colors duration-300 font-medium z-20 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg"
       >
         <ArrowLeft className="w-5 h-5" />

@@ -7,7 +7,7 @@ const LogoutButton = () => {
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
       try {
-        const token = sessionStorage.getItem("access_token");
+        const token = localStorage.getItem("accessToken"); // Changed to localStorage and correct key
 
         if (token) {
           const response = await fetch("http://localhost:5555/api/logout", {
@@ -23,12 +23,23 @@ const LogoutButton = () => {
           }
         }
 
-        // Always clear local token (even if backend logout fails/expired)
-        sessionStorage.removeItem("access_token");
+        // Clear ALL localStorage items related to authentication
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("role");
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("username");
+        
+        // Optional: Clear all localStorage (if you want to be thorough)
+        // localStorage.clear();
+        
         navigate("/signin");
       } catch (error) {
         console.error("Logout request error:", error);
-        sessionStorage.removeItem("access_token");
+        // Ensure cleanup even if request fails
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("role");
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("username");
         navigate("/signin");
       }
     }

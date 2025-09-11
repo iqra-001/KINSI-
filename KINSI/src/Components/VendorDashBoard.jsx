@@ -11,7 +11,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import LogoutButton from './LogOutButton';
+
 const VendorDashboard = () => {
+  // Auth context
+  const { currentUser, tokenVerified } = useAuth();
+
   // State management
   const [activeSection, setActiveSection] = useState('dashboard');
   const [profileImage, setProfileImage] = useState(null);
@@ -20,12 +24,8 @@ const VendorDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Mock user ID - in real app, this would come from authentication
-  const [currentUserId] = useState(1);
   const [vendorId, setVendorId] = useState(null);
-
-  const [notifications, setNotifications] = useState([]); // Updated: dynamic notifications
+  const [notifications, setNotifications] = useState([]);
 
   const [vendorProfile, setVendorProfile] = useState({
     businessName: '',
@@ -61,47 +61,47 @@ const VendorDashboard = () => {
     total_bookings: 0
   });
 
-  // API Base URL - adjust this to match your Flask server
+  // API Base URL
   const API_BASE_URL = 'http://localhost:5555/api';
 
-  // API utility functions
+  // API utility function
   const apiCall = async (endpoint, options = {}) => {
     try {
-      const token = sessionStorage.getItem("access_token"); // or localStorage
-  
+      const token = localStorage.getItem("accessToken");
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {}), // attach token if it exists
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
           ...options.headers
         },
         ...options
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.error || "API call failed");
       }
-  
+
       return data;
     } catch (error) {
       console.error("API Error:", error);
       throw error;
     }
   };
-  
-  // Load vendor profile and data on component mount
+
+  // Load vendor data after token is verified and user exists
   useEffect(() => {
-    loadVendorData();
-  }, [currentUserId]);
+    if (tokenVerified && currentUser) {
+      loadVendorData();
+    }
+  }, [tokenVerified, currentUser?.userId]);
 
   const loadVendorData = async () => {
-    if (!currentUserId) return;
+    if (!currentUser?.userId) return;
 
     setLoading(true);
     try {
-      // Load vendor profile
       const vendorData = await apiCall(`/vendor/profile`);
       if (vendorData) {
         setVendorId(vendorData.id);
@@ -122,14 +122,11 @@ const VendorDashboard = () => {
           }
         });
 
-        // Load services
-        await loadVendorServices(vendorData.id);
-        
-        // Load stats
-        await loadVendorStats(vendorData.id);
-        
-        // New: Load notifications
-        await loadNotifications(vendorData.id);
+        await Promise.all([
+          loadVendorServices(vendorData.id),
+          loadVendorStats(vendorData.id),
+          loadNotifications(vendorData.id)
+        ]);
       }
     } catch (error) {
       console.log('No existing vendor profile found');
@@ -156,7 +153,6 @@ const VendorDashboard = () => {
     }
   };
 
-  // New: Load notifications/alerts
   const loadNotifications = async (vendorId) => {
     try {
       const notifs = await apiCall(`/vendor/notifications/${vendorId}`);
@@ -166,6 +162,7 @@ const VendorDashboard = () => {
     }
   };
 
+  // Profile
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -200,7 +197,7 @@ const VendorDashboard = () => {
 
     try {
       const profileData = {
-        user_id: currentUserId,
+        user_id: currentUser.userId,
         business_name: vendorProfile.businessName,
         service_type: vendorProfile.category,
         description: vendorProfile.description,
@@ -226,7 +223,6 @@ const VendorDashboard = () => {
 
       setSuccess('Profile saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
-      
     } catch (error) {
       setError('Error saving profile: ' + error.message);
     } finally {
@@ -234,6 +230,7 @@ const VendorDashboard = () => {
     }
   };
 
+  // Services
   const handleServiceInputChange = (field, value) => {
     setServiceFormData(prev => ({
       ...prev,
@@ -243,7 +240,7 @@ const VendorDashboard = () => {
 
   const handleServiceSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!vendorId) {
       setError('Please save your vendor profile first');
       return;
@@ -268,12 +265,12 @@ const VendorDashboard = () => {
         body: JSON.stringify(serviceData)
       });
 
-      // Reload services and stats
-      await loadVendorServices(vendorId);
-      await loadVendorStats(vendorId);
+      await Promise.all([
+        loadVendorServices(vendorId),
+        loadVendorStats(vendorId)
+      ]);
 
       setShowServiceForm(false);
-      // Reset form
       setServiceFormData({
         serviceName: '',
         category: '',
@@ -285,7 +282,6 @@ const VendorDashboard = () => {
 
       setSuccess('Service added successfully!');
       setTimeout(() => setSuccess(''), 3000);
-
     } catch (error) {
       setError('Error adding service: ' + error.message);
     } finally {
@@ -316,6 +312,7 @@ const VendorDashboard = () => {
     }
   };
 
+  // Menu items
   const menuItems = [
     { id: 'dashboard', icon: <BarChart3 className="w-5 h-5" />, label: 'Dashboard', color: '#D97B29' },
     { id: 'profile', icon: <Store className="w-5 h-5" />, label: 'Business Profile', color: '#8FB996' },
@@ -323,6 +320,7 @@ const VendorDashboard = () => {
     { id: 'sales', icon: <DollarSign className="w-5 h-5" />, label: 'Sales & Analytics', color: '#D97B29' },
     { id: 'customers', icon: <Users className="w-5 h-5" />, label: 'Customer Requests', color: '#8FB996' }
   ];
+
 
   // Error/Success notification component
   const Notification = () => {
